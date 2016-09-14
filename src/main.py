@@ -7,7 +7,8 @@ try:
     import time
     import libres
     import libgame
-    
+
     libgame.play()
-except: #不写Exception才能捕获键盘中断，最外部响应。
+except:
+    # 不写Exception才能捕获键盘中断，最外部响应。
     raise SystemExit
