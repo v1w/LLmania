@@ -32,6 +32,7 @@ class GameWindow(pyglet.window.Window):
         self.speed = speed
         self.music_start = music_start
         self.auto = auto_flag
+        self.autoplay_long_pressed = False
         self.judge_pos = 100
         # 底部蓝线的timing
         self.judge_time = self.judge_pos / self.speed
@@ -40,12 +41,15 @@ class GameWindow(pyglet.window.Window):
         # 不能用[0]*9,否则九个元素指向同一片内存地址
         self.curnote_time = 0
         self.curnote = []
+        self.pos_y = 0
         self.lanepressed = [0 for i in range(0, 9)]
+        self.time_remain_long = 0
         # 0表示没有按下，1表示p, 2表示gr
         self.lanepressed_long = [False for i in range(0, 9)]
         # 长条是否按下(保持)
-        self.pressing_note_long = [[] for i in range(0,9)]
+        self.pressing_note_long = [[] for i in range(0, 9)]
         # 当前处于按下状态的note
+        self.missed_notes = []
         self.dt = 0
         # note 距离perfect点的距离 in ms
         self.score = 0
@@ -53,12 +57,20 @@ class GameWindow(pyglet.window.Window):
         self.fps_display = pyglet.clock.ClockDisplay()
 
         self.background = pyglet.sprite.Sprite(img=libres.background, x=400, y=300)
+        self.p_timing = 30
+        self.gr_timing = 60
+        self.g_timing = 80
+        self.b_timing = 100
+        self.timing_limit = 300
         self.p_score = 573
         self.gr_score = 333
         self.g_score = 150
+        self.b_score = 70
         self.p_label = pyglet.sprite.Sprite(img=libres.p_label, x=400, y=400)
         self.gr_label = pyglet.sprite.Sprite(img=libres.gr_label, x=400, y=400)
         self.g_label = pyglet.sprite.Sprite(img=libres.g_label, x=400, y=400)
+        self.b_label = pyglet.sprite.Sprite(img=libres.b_label, x=400, y=400)
+        self.m_label = pyglet.sprite.Sprite(img=libres.m_label, x=400, y=400)
         self.score_label = pyglet.text.Label(text="Score: 0", x=400, y=575, anchor_x='center')
         self.combo_label = pyglet.text.Label(text="0 combo", x=400, y=350, anchor_x='center')
 
@@ -66,13 +78,10 @@ class GameWindow(pyglet.window.Window):
         self.clear()
         self.score_label.text = "Score: %d" % self.score
         self.combo_label.text = "%d combo" % self.combo
-        #self.background.draw()
-        self.score_label.draw()
-        self.combo_label.draw()
-        self.fps_display.draw()
+        # self.background.draw()
         draw_rect(400, self.judge_pos, 800.0, 2.0, 1, 0, 0)
         for i in self.lanes:
-            draw_rect(self.lanepos[i], self.judge_pos-10, 40, 20.0, 1, 0, 0)
+            draw_rect(self.lanepos[i], self.judge_pos - 10, 40, 20.0, 1, 0, 0)
 
         for lane in self.lanes:
             for note in self.notes[lane]:
@@ -82,124 +91,226 @@ class GameWindow(pyglet.window.Window):
                         # note 进入上边界
 
                         self.curnote_time = note[0] - self.dt - self.offset
-                        pos_y = self.curnote_time * self.speed
+                        self.pos_y = self.curnote_time * self.speed
                         # 当前note的剩余时间, 高度
                         self.curnote = note[:]
                         # 当前的note,浅复制
+                        timediff = self.curnote_time - self.judge_time
+                        # 当前note距离judge的时间
                         if self.auto:
                             self.autoplay(lane)
                         if note[1] == 0:
                             # 是单键,画出单键
-                            draw_rect(self.lanepos[lane], pos_y, 40.0, 10.0, 1, 1, 1)
+                            draw_rect(self.lanepos[lane], self.pos_y, 40.0, 10.0, 1, 1, 1)
                             if self.lanepressed[lane]:
-                                self.judge_score(self.lanepressed, lane)
-                                self.notes[lane].remove(self.curnote)
-                                self.lanepressed[lane] = 0
+                                self.judge_score_single(abs(timediff), lane)
+                            elif timediff <= - self.b_timing and note not in self.missed_notes:
+                                # miss
+                                self.combo = 0
+                                self.m_label.draw()
+                                self.missed_notes.append(note)
 
                         else:
 
                             # 是长条
-                            if self.lanepressed[lane] and not self.lanepressed_long[lane]:
+                            self.time_remain_long = note[0] + note[1] - self.dt - self.offset - self.judge_time
+                            if self.lanepressed[lane] and (not self.lanepressed_long[lane]):
 
-                                # 第一次按下，且未miss
-                                draw_rect(self.lanepos[lane], pos_y, 40.0, note[1] * self.speed, 1, 1, 0)
-                                self.judge_score(self.lanepressed, lane)
-                                self.lanepressed_long[lane] = True
-                                self.lanepressed[lane] = 0
-                                self.pressing_note_long[lane] = note[:]
-                            elif self.lanepressed_long[lane] and note == self.pressing_note_long[lane]:
-                                # 已经按下过,且本循环的note是上个循环判断的note
-                                self.lanepressed[lane] = 0
-                                time_remain = note[0] + note[1] - self.dt - self.offset - self.judge_time
-                                if time_remain > 0:
+                                # 第一次按下,判断是否在判定区间
+                                self.judge_score_press(abs(timediff), lane)
+
+                            elif (not self.lanepressed[lane]) and (not self.lanepressed_long[lane]):
+                                # 未按下
+                                draw_rect(self.lanepos[lane], self.pos_y, 40.0, note[1] * self.speed, 1, 1, 1)
+
+                                if timediff <= - self.b_timing and note not in self.missed_notes:
+                                    # press miss
+                                    self.combo = 0
+                                    self.m_label.draw()
+                                    self.missed_notes.append(note)
+
+                            elif self.lanepressed[lane] and self.lanepressed_long[lane] \
+                                    and note == self.pressing_note_long[lane]:
+                                # 已经按下过,且本循环的note是上个循环判断的note,且仍未松开
+
+                                if self.time_remain_long >= - self.b_timing:
                                     # 保证不反向
-                                    draw_rect(
-                                        self.lanepos[lane], self.judge_pos, 40.0, time_remain * self.speed, 1, 1, 0)
+                                    draw_rect(self.lanepos[lane], self.judge_pos, \
+                                              40.0, self.time_remain_long * self.speed, 1, 1, 0)
                                     draw_rect(self.lanepos[lane], 75, 70.0, 50.0, 1, 0, 0)
                                 else:
-                                    # 长条结束，删除长条
-                                    self.notes[lane].remove(note)
-                                    self.combo += 1
-                                    libres.p_sound.play()
-                                    draw_rect(self.lanepos[lane], 75, 70.0, 50.0, 0, 1, 0)
-                                    self.p_label.draw()
+                                    # 松开miss
                                     self.lanepressed_long[lane] = False
+                                    self.combo = 0
+                                    self.m_label.draw()
+
+                            elif (not self.lanepressed[lane]) and self.lanepressed_long[lane] \
+                                    and note == self.pressing_note_long[lane]:
+                                # 松开
+                                self.judge_score_release(abs(self.time_remain_long), lane)
+                                self.notes[lane].remove(self.curnote)
+                                self.lanepressed_long[lane] = False
+
                             else:
-                                # miss
-                                draw_rect(self.lanepos[lane], pos_y, 40.0, note[1] * self.speed, 1, 1, 1)
-                                self.lanepressed[lane] = 0
+                                # 其他情况？
+                                draw_rect(self.lanepos[lane], self.pos_y, 40.0, note[1] * self.speed, 1, 1, 1)
 
                     else:
                         break
                 else:
                     continue
-    '''
+        self.score_label.draw()
+        if self.combo != 0:
+            self.combo_label.draw()
+        self.fps_display.draw()
+
     def on_key_press(self, key, modifiers):
-        """Action upon key press, raise interrupt, modify self.lanepressed"""
-        p_timing = 30
-        gr_timing = 50
-        g_timing = 70
-
-        def key_action(lane):
-            if abs(self.curnote_time[lane] - self.judge_time) <= p_timing:
-                if self.curnote[lane][1] == 0:
-                    self.curnote_time[lane] = 0
-                self.lanepressed[lane] = [True, 0]
-            elif abs(self.curnote_time[lane] - self.judge_time) <= gr_timing:
-                if self.curnote[lane][1] == 0:
-                    self.curnote_time[lane] = 0
-                self.lanepressed[lane] = [True, 1]
-            elif abs(self.curnote_time[lane] - self.judge_time) <= g_timing:
-                if self.curnote[lane][1] == 0:
-                    self.curnote_time[lane] = 0
-                self.lanepressed[lane] = [True, 2]
-
         if key == pyglet.window.key.A:
-            key_action(0)
-        if key == pyglet.window.key.S:
-            key_action(1)
-        if key == pyglet.window.key.D:
-            key_action(2)
-        if key == pyglet.window.key.F:
-            key_action(3)
-        if key == pyglet.window.key.G:
-            key_action(4)
-        if key == pyglet.window.key.H:
-            key_action(5)
-        if key == pyglet.window.key.J:
-            key_action(6)
-        if key == pyglet.window.key.K:
-            key_action(7)
-        if key == pyglet.window.key.L:
-            key_action(8)
-    '''
-    def judge_score(self, lanepressed, lane):
-        """none"""
-        try:
-            draw_rect(self.lanepos[lane], 75, 70.0, 50.0, 1, 0, 0)
-            # 得分特效
-            if lanepressed[lane] == 1:
-                self.p_label.draw()
-                self.score += self.p_score
-                self.combo += 1
-                libres.p_sound.play()
-            elif lanepressed[lane] == 2:
-                self.gr_label.draw()
-                self.score += self.gr_score
-                self.combo += 1
-                libres.gr_sound.play()
-            elif lanepressed[lane] == 3:
-                self.g_label.draw()
-                self.score += self.g_score
-                self.combo = 0
-                libres.g_sound.play()
+            self.lanepressed[0] = True
+        elif key == pyglet.window.key.S:
+            self.lanepressed[1] = True
+        elif key == pyglet.window.key.D:
+            self.lanepressed[2] = True
+        elif key == pyglet.window.key.F:
+            self.lanepressed[3] = True
+        elif key == pyglet.window.key.G:
+            self.lanepressed[4] = True
+        elif key == pyglet.window.key.H:
+            self.lanepressed[5] = True
+        elif key == pyglet.window.key.J:
+            self.lanepressed[6] = True
+        elif key == pyglet.window.key.K:
+            self.lanepressed[7] = True
+        elif key == pyglet.window.key.L:
+            self.lanepressed[8] = True
 
-        except ValueError:
+    def on_key_release(self, key, modifiers):
+        if key == pyglet.window.key.A:
+            self.lanepressed[0] = False
+        elif key == pyglet.window.key.S:
+            self.lanepressed[1] = False
+        elif key == pyglet.window.key.D:
+            self.lanepressed[2] = False
+        elif key == pyglet.window.key.F:
+            self.lanepressed[3] = False
+        elif key == pyglet.window.key.G:
+            self.lanepressed[4] = False
+        elif key == pyglet.window.key.H:
+            self.lanepressed[5] = False
+        elif key == pyglet.window.key.J:
+            self.lanepressed[6] = False
+        elif key == pyglet.window.key.K:
+            self.lanepressed[7] = False
+        elif key == pyglet.window.key.L:
+            self.lanepressed[8] = False
+
+    def judge_score_single(self, timediff, lane):
+        if timediff <= self.p_timing:
+            self.p_label.draw()
+            draw_rect(self.lanepos[lane], 75, 70.0, 50.0, 1, 0, 0)
+            self.score += self.p_score
+            self.combo += 1
+            libres.p_sound.play()
+            self.notes[lane].remove(self.curnote)
+        elif timediff <= self.gr_timing:
+            self.gr_label.draw()
+            draw_rect(self.lanepos[lane], 75, 70.0, 50.0, 1, 0, 0)
+            self.score += self.gr_score
+            self.combo += 1
+            libres.gr_sound.play()
+            self.notes[lane].remove(self.curnote)
+        elif timediff <= self.g_timing:
+            self.g_label.draw()
+            draw_rect(self.lanepos[lane], 75, 70.0, 50.0, 1, 0, 0)
+            self.score += self.g_score
+            self.combo = 0
+            libres.g_sound.play()
+            self.notes[lane].remove(self.curnote)
+        elif timediff <= self.b_timing:
+            self.b_label.draw()
+            draw_rect(self.lanepos[lane], 75, 70.0, 50.0, 1, 0, 0)
+            self.score += self.b_score
+            self.combo = 0
+            self.notes[lane].remove(self.curnote)
+            # libres.b_sound.play()
+        else:
             pass
 
+    def judge_score_press(self, timediff, lane):
+        if timediff <= self.p_timing:
+            self.p_label.draw()
+            draw_rect(self.lanepos[lane], 75, 70.0, 50.0, 1, 0, 0)
+            draw_rect(self.lanepos[lane], self.judge_pos, 40.0, self.time_remain_long * self.speed, 1, 1, 0)
+            self.score += self.p_score
+            libres.p_sound.play()
+            self.lanepressed_long[lane] = True
+            self.pressing_note_long[lane] = self.curnote[:]
+        elif timediff <= self.gr_timing:
+            self.gr_label.draw()
+            draw_rect(self.lanepos[lane], 75, 70.0, 50.0, 1, 0, 0)
+            draw_rect(self.lanepos[lane], self.judge_pos, 40.0, self.time_remain_long * self.speed, 1, 1, 0)
+            self.score += self.gr_score
+            libres.gr_sound.play()
+            self.lanepressed_long[lane] = True
+            self.pressing_note_long[lane] = self.curnote[:]
+        elif timediff <= self.g_timing:
+            self.g_label.draw()
+            draw_rect(self.lanepos[lane], 75, 70.0, 50.0, 1, 0, 0)
+            draw_rect(self.lanepos[lane], self.judge_pos, 40.0, self.time_remain_long * self.speed, 1, 1, 0)
+            self.score += self.g_score
+            self.combo = 0
+            libres.g_sound.play()
+            self.lanepressed_long[lane] = True
+            self.pressing_note_long[lane] = self.curnote[:]
+        elif timediff <= self.b_timing:
+            self.b_label.draw()
+            draw_rect(self.lanepos[lane], 75, 70.0, 50.0, 1, 0, 0)
+            draw_rect(self.lanepos[lane], self.judge_pos, 40.0, self.time_remain_long * self.speed, 1, 1, 0)
+            self.score += self.b_score
+            self.combo = 0
+            self.lanepressed_long[lane] = True
+            self.pressing_note_long[lane] = self.curnote[:]
+            # libres.b_sound.play()
+        else:
+            draw_rect(self.lanepos[lane], self.pos_y, 40.0, self.curnote[1] * self.speed, 1, 1, 1)
+            self.lanepressed_long[lane] = False
+
+    def judge_score_release(self, timediff, lane):
+        if timediff <= self.p_timing:
+            self.p_label.draw()
+            draw_rect(self.lanepos[lane], 75, 70.0, 50.0, 1, 0, 0)
+            self.score += self.p_score
+            self.combo += 1
+            libres.p_sound.play()
+        elif timediff <= self.gr_timing:
+            self.gr_label.draw()
+            draw_rect(self.lanepos[lane], 75, 70.0, 50.0, 1, 0, 0)
+            self.score += self.gr_score
+            self.combo += 1
+            libres.gr_sound.play()
+        elif timediff <= self.g_timing:
+            self.g_label.draw()
+            draw_rect(self.lanepos[lane], 75, 70.0, 50.0, 1, 0, 0)
+            self.score += self.g_score
+            self.combo = 0
+            libres.g_sound.play()
+
     def autoplay(self, lane):
-        if abs(self.curnote_time - self.judge_time) <= 15:
-            self.lanepressed[lane] = 1
+        if self.curnote[1] == 0:
+            if abs(self.curnote_time - self.judge_time) <= 15:
+                self.lanepressed[lane] = True
+            else:
+                self.lanepressed[lane] = False
+        elif abs(self.curnote_time - self.judge_time) <= 15 or self.autoplay_long_pressed:
+            if self.curnote[1] + self.curnote[0] - self.dt - self.offset - self.judge_time > 0:
+                self.lanepressed[lane] = True
+                self.autoplay_long_pressed = True
+            else:
+                self.lanepressed[lane] = False
+                self.autoplay_long_pressed = False
+        else:
+            self.lanepressed[lane] = False
+            self.autoplay_long_pressed = False
 
     def update(self, dt):
         self.dt = int(time.time() * 1000) - self.music_start
@@ -208,7 +319,6 @@ class GameWindow(pyglet.window.Window):
 
 
 def play():
-    global auto_flag
     try:
         songnum = ''
         banner = ''

@@ -80,14 +80,17 @@ try:
         offset = conf['offset']
 
     except FileNotFoundError:
-        speed = 0.85
-        offset = -110
+        speed = 0.4
+        offset = -250
+        # speed = 0.85
+        # offset = -110
         conf = {'speed': speed, 'offset': offset}
         json.dump(conf, open('./config', 'w'))
 
     p_sound = pyglet.resource.media("asset/perfect.mp3", streaming=False)
     gr_sound = pyglet.resource.media("asset/great.mp3", streaming=False)
     g_sound = pyglet.resource.media("asset/good.mp3", streaming=False)
+    # b_sound = pyglet.resource.media("asset/bad.mp3", streaming=False)
 
     background = pyglet.resource.image("asset/background.jpg")
     center_image(background)
@@ -98,6 +101,10 @@ try:
     center_image(gr_label)
     g_label = pyglet.resource.image("asset/good.png")
     center_image(g_label)
+    b_label = pyglet.resource.image("asset/bad.png")
+    center_image(b_label)
+    m_label = pyglet.resource.image("asset/miss.png")
+    center_image(m_label)
     print('OK')
 
 except Exception as e:
