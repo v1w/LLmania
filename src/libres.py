@@ -64,13 +64,14 @@ try:
 
     speed = 0
     offset = 0
-    print('======LLSIF emulator======\nVersion: Alpha 1\nAuthor: vincent.w\nCompiled: 2016.9.13')
+    print('======LLSIF emulator======\nAuthor: v1w\nWebsite: github.com/v1w/SIFemu')
     print('==========================')
     sys.stdout.write('Loading resources..')
     os.chdir(os.path.dirname(sys.argv[0]))
     pyglet.resource.path = ['./resources']
     pyglet.resource.reindex()
-
+    pyglet.font.add_file('./resources/asset/Acens.ttf')
+    font = pyglet.font.load('Acens')
     try:
 
         # 加载config文件，如果不存在就创建

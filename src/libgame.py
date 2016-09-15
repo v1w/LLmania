@@ -1,10 +1,9 @@
 try:
 
     import pyglet
-
-    # for pyinstaller to recognize avbin
     pyglet.lib.load_library('avbin')
     pyglet.have_avbin = True
+    # for pyinstaller to recognize avbin
     from pyglet.gl import *
     import libres
     import time
@@ -24,6 +23,7 @@ def draw_rect(centerx, bottomy, width, height, r, g, b):
 
 
 class GameWindow(pyglet.window.Window):
+
     def __init__(self, offset, speed, notes, music_start, auto_flag, caption):
         super(GameWindow, self).__init__(vsync=True, width=800, height=600, caption=caption)
         # pyglet.clock.set_fps_limit(60)
@@ -38,8 +38,8 @@ class GameWindow(pyglet.window.Window):
         self.lanes = [i for i in range(0, 9)]
         self.lanepos = [i for i in range(100, 750, 75)]
         # 不能用[0]*9,否则九个元素指向同一片内存地址
-        self.curnote_time = 0
-        self.curnote = []
+        self.cur_note_time = 0
+        self.cur_note = []
         self.pos_y = 0
         self.lanepressed = [0 for i in range(0, 9)]
         self.time_remain_long = 0
@@ -70,18 +70,37 @@ class GameWindow(pyglet.window.Window):
         self.g_label = pyglet.sprite.Sprite(img=libres.g_label, x=400, y=400)
         self.b_label = pyglet.sprite.Sprite(img=libres.b_label, x=400, y=400)
         self.m_label = pyglet.sprite.Sprite(img=libres.m_label, x=400, y=400)
-        self.score_label = pyglet.text.Label(text="Score: 0", x=400, y=575, anchor_x='center')
-        self.combo_label = pyglet.text.Label(text="0 combo", x=400, y=350, anchor_x='center')
+        self.score_label = pyglet.text.Label(text="Score: 0", x=400, y=575, anchor_x='center', font_name = 'Acens')
+        self.combo_label = pyglet.text.Label(text="0 combo", x=400, y=350, anchor_x='center', font_name = 'Acens')
 
         if not self.auto_flag:
-            def autoplay(self,lane):
+            def auto_play(self, lane):
                 pass
-            GameWindow.autoplay = autoplay
+            GameWindow.auto_play = auto_play
 
     def on_draw(self):
         self.clear()
         self.score_label.text = "Score: %d" % self.score
         self.combo_label.text = "%d combo" % self.combo
+        if self.combo >= 800:
+            self.combo_label.color = (255, 0, 255, 250)
+        elif self.combo >= 500:
+            self.combo_label.color = (0, 255, 255, 250)
+            self.combo_label.font_size = 14
+        elif self.combo >= 300:
+            self.combo_label.color = (255, 0, 0, 220)
+            self.combo_label.font_size = 13
+        elif self.combo >= 100:
+            self.combo_label.color = (255, 255, 0, 200)
+            self.combo_label.bold = True
+        elif self.combo >= 50:
+            self.combo_label.color = (0, 255, 0, 200)
+        elif self.combo >= 10:
+            self.combo_label.color = (0, 0, 255, 220)
+        else:
+            self.combo_label.color = (255, 255, 255, 180)
+            self.combo_label.bold = False
+            self.combo_label.font_size = 12
         # self.background.draw()
         draw_rect(400, self.judge_pos, 800.0, 2.0, 1, 0, 0)
         for i in self.lanes:
@@ -93,21 +112,20 @@ class GameWindow(pyglet.window.Window):
                     # note未出下边界
                     if (note[0] - self.dt - self.offset) * self.speed <= 600:
                         # note 进入上边界
-
-                        self.curnote_time = note[0] - self.dt - self.offset
-                        self.pos_y = self.curnote_time * self.speed
+                        self.cur_note_time = note[0] - self.dt - self.offset
+                        self.pos_y = self.cur_note_time * self.speed
                         # 当前note的剩余时间, 高度
-                        self.curnote = note[:]
+                        self.cur_note = note[:]
                         # 当前的note,浅复制
-                        timediff = self.curnote_time - self.judge_time
+                        time_diff = self.cur_note_time - self.judge_time
                         # 当前note距离judge的时间
-                        self.autoplay(lane)
+                        self.auto_play(lane)
                         if note[1] == 0:
                             # 是单键,画出单键
                             draw_rect(self.lanepos[lane], self.pos_y, 40.0, 10.0, 1, 1, 1)
                             if self.lanepressed[lane]:
-                                self.judge_score_single(abs(timediff), lane)
-                            elif timediff <= - self.b_timing and note not in self.missed_notes:
+                                self.judge_score_single(abs(time_diff), lane)
+                            elif time_diff <= - self.b_timing and note not in self.missed_notes:
                                 # miss
                                 self.combo = 0
                                 self.m_label.draw()
@@ -120,13 +138,13 @@ class GameWindow(pyglet.window.Window):
                             if self.lanepressed[lane] and (not self.lanepressed_long[lane]):
 
                                 # 第一次按下,判断是否在判定区间
-                                self.judge_score_press(abs(timediff), lane)
+                                self.judge_score_press(abs(time_diff), lane)
 
                             elif (not self.lanepressed[lane]) and (not self.lanepressed_long[lane]):
                                 # 未按下
                                 draw_rect(self.lanepos[lane], self.pos_y, 40.0, note[1] * self.speed, 1, 1, 1)
 
-                                if timediff <= - self.b_timing and note not in self.missed_notes:
+                                if time_diff <= - self.b_timing and note not in self.missed_notes:
                                     # press miss
                                     self.combo = 0
                                     self.m_label.draw()
@@ -151,7 +169,7 @@ class GameWindow(pyglet.window.Window):
                                     and note == self.pressing_note_long[lane]:
                                 # 松开
                                 self.judge_score_release(abs(self.time_remain_long), lane)
-                                self.notes[lane].remove(self.curnote)
+                                self.notes[lane].remove(self.cur_note)
                                 self.lanepressed_long[lane] = False
 
                             else:
@@ -214,27 +232,27 @@ class GameWindow(pyglet.window.Window):
             self.score += self.p_score
             self.combo += 1
             libres.p_sound.play()
-            self.notes[lane].remove(self.curnote)
+            self.notes[lane].remove(self.cur_note)
         elif timediff <= self.gr_timing:
             self.gr_label.draw()
             draw_rect(self.lanepos[lane], 75, 70.0, 50.0, 1, 0, 0)
             self.score += self.gr_score
             self.combo += 1
             libres.gr_sound.play()
-            self.notes[lane].remove(self.curnote)
+            self.notes[lane].remove(self.cur_note)
         elif timediff <= self.g_timing:
             self.g_label.draw()
             draw_rect(self.lanepos[lane], 75, 70.0, 50.0, 1, 0, 0)
             self.score += self.g_score
             self.combo = 0
             libres.g_sound.play()
-            self.notes[lane].remove(self.curnote)
+            self.notes[lane].remove(self.cur_note)
         elif timediff <= self.b_timing:
             self.b_label.draw()
             draw_rect(self.lanepos[lane], 75, 70.0, 50.0, 1, 0, 0)
             self.score += self.b_score
             self.combo = 0
-            self.notes[lane].remove(self.curnote)
+            self.notes[lane].remove(self.cur_note)
             # libres.b_sound.play()
         else:
             pass
@@ -247,7 +265,7 @@ class GameWindow(pyglet.window.Window):
             self.score += self.p_score
             libres.p_sound.play()
             self.lanepressed_long[lane] = True
-            self.pressing_note_long[lane] = self.curnote[:]
+            self.pressing_note_long[lane] = self.cur_note[:]
         elif timediff <= self.gr_timing:
             self.gr_label.draw()
             draw_rect(self.lanepos[lane], 75, 70.0, 50.0, 1, 0, 0)
@@ -255,7 +273,7 @@ class GameWindow(pyglet.window.Window):
             self.score += self.gr_score
             libres.gr_sound.play()
             self.lanepressed_long[lane] = True
-            self.pressing_note_long[lane] = self.curnote[:]
+            self.pressing_note_long[lane] = self.cur_note[:]
         elif timediff <= self.g_timing:
             self.g_label.draw()
             draw_rect(self.lanepos[lane], 75, 70.0, 50.0, 1, 0, 0)
@@ -264,7 +282,7 @@ class GameWindow(pyglet.window.Window):
             self.combo = 0
             libres.g_sound.play()
             self.lanepressed_long[lane] = True
-            self.pressing_note_long[lane] = self.curnote[:]
+            self.pressing_note_long[lane] = self.cur_note[:]
         elif timediff <= self.b_timing:
             self.b_label.draw()
             draw_rect(self.lanepos[lane], 75, 70.0, 50.0, 1, 0, 0)
@@ -272,10 +290,10 @@ class GameWindow(pyglet.window.Window):
             self.score += self.b_score
             self.combo = 0
             self.lanepressed_long[lane] = True
-            self.pressing_note_long[lane] = self.curnote[:]
+            self.pressing_note_long[lane] = self.cur_note[:]
             # libres.b_sound.play()
         else:
-            draw_rect(self.lanepos[lane], self.pos_y, 40.0, self.curnote[1] * self.speed, 1, 1, 1)
+            draw_rect(self.lanepos[lane], self.pos_y, 40.0, self.cur_note[1] * self.speed, 1, 1, 1)
             self.lanepressed_long[lane] = False
 
     def judge_score_release(self, timediff, lane):
@@ -298,19 +316,21 @@ class GameWindow(pyglet.window.Window):
             self.combo = 0
             libres.g_sound.play()
 
+    def auto_play(self, lane):
+        self.lanepressed = [False for i in range(0, 9)]
+        if self.cur_note[1] == 0:
+            if self.cur_note_time - self.judge_time <= 10:
+                self.lanepressed[lane] = True
+        elif self.cur_note_time - self.judge_time <= 15 \
+                and self.cur_note[1] + self.cur_note[0] - self.dt - self.offset - self.judge_time > 0:
+            self.lanepressed[lane] = True
+
     def update(self, dt):
         self.dt = int(time.time() * 1000) - self.music_start
         if self.dt > 180000:
             self.on_close()
 
-    def autoplay(self, lane):
-        self.lanepressed = [False for i in range(0, 9)]
-        if self.curnote[1] == 0:
-            if self.curnote_time - self.judge_time <= 10:
-                self.lanepressed[lane] = True
-        elif self.curnote_time - self.judge_time <= 15 \
-                and self.curnote[1] + self.curnote[0] - self.dt - self.offset - self.judge_time > 0:
-            self.lanepressed[lane] = True
+
 
 def play():
     try:
