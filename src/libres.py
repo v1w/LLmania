@@ -38,8 +38,8 @@ def scan():
     songfiles = []
     btms = []
     invalid_songs = []
-    scan = [i for i in os.walk('./resources/')]
-    for parent, dirnames, filenames in scan:
+    scan_ = [i for i in os.walk('./resources/')]
+    for parent, dirnames, filenames in scan_:
         if parent == './resources/beatmap':
             btms_ = filenames
         if parent == './resources/song':
@@ -64,13 +64,14 @@ try:
 
     speed = 0
     offset = 0
-    print('======LLSIF emulator======\nVersion: Alpha 1\nAuthor: vincent.w\nCompiled: 2016.9.13')
+    print('======LLSIF emulator======\nAuthor: v1w\nWebsite: github.com/v1w/SIFemu')
     print('==========================')
     sys.stdout.write('Loading resources..')
     os.chdir(os.path.dirname(sys.argv[0]))
     pyglet.resource.path = ['./resources']
     pyglet.resource.reindex()
-
+    pyglet.font.add_file('./resources/asset/Acens.ttf')
+    font = pyglet.font.load('Acens')
     try:
 
         # 加载config文件，如果不存在就创建
@@ -80,14 +81,17 @@ try:
         offset = conf['offset']
 
     except FileNotFoundError:
-        speed = 0.85
-        offset = -110
+        speed = 0.4
+        offset = -250
+        # speed = 0.85
+        # offset = -110
         conf = {'speed': speed, 'offset': offset}
         json.dump(conf, open('./config', 'w'))
 
     p_sound = pyglet.resource.media("asset/perfect.mp3", streaming=False)
     gr_sound = pyglet.resource.media("asset/great.mp3", streaming=False)
     g_sound = pyglet.resource.media("asset/good.mp3", streaming=False)
+    # b_sound = pyglet.resource.media("asset/bad.mp3", streaming=False)
 
     background = pyglet.resource.image("asset/background.jpg")
     center_image(background)
@@ -98,6 +102,10 @@ try:
     center_image(gr_label)
     g_label = pyglet.resource.image("asset/good.png")
     center_image(g_label)
+    b_label = pyglet.resource.image("asset/bad.png")
+    center_image(b_label)
+    m_label = pyglet.resource.image("asset/miss.png")
+    center_image(m_label)
     print('OK')
 
 except Exception as e:
