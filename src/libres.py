@@ -38,8 +38,8 @@ def scan():
     songfiles = []
     btms = []
     invalid_songs = []
-    scan = [i for i in os.walk('./resources/')]
-    for parent, dirnames, filenames in scan:
+    scan_ = [i for i in os.walk('./resources/')]
+    for parent, dirnames, filenames in scan_:
         if parent == './resources/beatmap':
             btms_ = filenames
         if parent == './resources/song':

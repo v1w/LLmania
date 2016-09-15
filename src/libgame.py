@@ -8,7 +8,7 @@ try:
     from pyglet.gl import *
     import libres
     import time
-    import traceback
+    # import traceback
 
 except Exception as e:
     print('Error 20004')
@@ -31,8 +31,7 @@ class GameWindow(pyglet.window.Window):
         self.offset = offset
         self.speed = speed
         self.music_start = music_start
-        self.auto = auto_flag
-        self.autoplay_long_pressed = False
+        self.auto_flag = auto_flag
         self.judge_pos = 100
         # 底部蓝线的timing
         self.judge_time = self.judge_pos / self.speed
@@ -74,6 +73,11 @@ class GameWindow(pyglet.window.Window):
         self.score_label = pyglet.text.Label(text="Score: 0", x=400, y=575, anchor_x='center')
         self.combo_label = pyglet.text.Label(text="0 combo", x=400, y=350, anchor_x='center')
 
+        if not self.auto_flag:
+            def autoplay(self,lane):
+                pass
+            GameWindow.autoplay = autoplay
+
     def on_draw(self):
         self.clear()
         self.score_label.text = "Score: %d" % self.score
@@ -97,8 +101,7 @@ class GameWindow(pyglet.window.Window):
                         # 当前的note,浅复制
                         timediff = self.curnote_time - self.judge_time
                         # 当前note距离judge的时间
-                        if self.auto:
-                            self.autoplay(lane)
+                        self.autoplay(lane)
                         if note[1] == 0:
                             # 是单键,画出单键
                             draw_rect(self.lanepos[lane], self.pos_y, 40.0, 10.0, 1, 1, 1)
@@ -135,7 +138,7 @@ class GameWindow(pyglet.window.Window):
 
                                 if self.time_remain_long >= - self.b_timing:
                                     # 保证不反向
-                                    draw_rect(self.lanepos[lane], self.judge_pos, \
+                                    draw_rect(self.lanepos[lane], self.judge_pos,
                                               40.0, self.time_remain_long * self.speed, 1, 1, 0)
                                     draw_rect(self.lanepos[lane], 75, 70.0, 50.0, 1, 0, 0)
                                 else:
@@ -295,28 +298,19 @@ class GameWindow(pyglet.window.Window):
             self.combo = 0
             libres.g_sound.play()
 
-    def autoplay(self, lane):
-        if self.curnote[1] == 0:
-            if abs(self.curnote_time - self.judge_time) <= 15:
-                self.lanepressed[lane] = True
-            else:
-                self.lanepressed[lane] = False
-        elif abs(self.curnote_time - self.judge_time) <= 15 or self.autoplay_long_pressed:
-            if self.curnote[1] + self.curnote[0] - self.dt - self.offset - self.judge_time > 0:
-                self.lanepressed[lane] = True
-                self.autoplay_long_pressed = True
-            else:
-                self.lanepressed[lane] = False
-                self.autoplay_long_pressed = False
-        else:
-            self.lanepressed[lane] = False
-            self.autoplay_long_pressed = False
-
     def update(self, dt):
         self.dt = int(time.time() * 1000) - self.music_start
         if self.dt > 180000:
             self.on_close()
 
+    def autoplay(self, lane):
+        self.lanepressed = [False for i in range(0, 9)]
+        if self.curnote[1] == 0:
+            if self.curnote_time - self.judge_time <= 10:
+                self.lanepressed[lane] = True
+        elif self.curnote_time - self.judge_time <= 15 \
+                and self.curnote[1] + self.curnote[0] - self.dt - self.offset - self.judge_time > 0:
+            self.lanepressed[lane] = True
 
 def play():
     try:
@@ -352,7 +346,8 @@ def play():
                 break
 
         player.play()
-        music_start = int(time.time() * 1000)  # 音乐开始时间in ms
+        music_start = int(time.time() * 1000)
+        # 音乐开始时间in ms
         window = GameWindow(offset=libres.offset, speed=libres.speed, notes=notes, music_start=music_start,
                             auto_flag=auto_flag, caption=songfiles[songnum].split('.')[0])
         pyglet.clock.schedule_interval(window.update, 1 / 200)
@@ -360,7 +355,7 @@ def play():
 
     except Exception as e:
         print('Error 20002')
-        traceback.print_exc()
+        # traceback.print_exc()
         raise SystemExit
 
 
