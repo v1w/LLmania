@@ -34,7 +34,7 @@ def load_song(songfile):
 
 
 def scan():
-    # 用songfile来判断有没有歌，以及是否有相应的btm
+    """Use parameter songfile to check song and beatmap existence"""
     songfiles = []
     btms = []
     invalid_songs = []
@@ -74,7 +74,7 @@ try:
     font = pyglet.font.load('Acens')
     try:
 
-        # 加载config文件，如果不存在就创建
+        # Load config
         with open('./config') as f:
             conf = json.loads(f.read())
         speed = conf['speed']

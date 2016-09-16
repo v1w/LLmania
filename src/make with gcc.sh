@@ -15,7 +15,7 @@ rm libgame.o;
 mv -f libgame.so ../;
 cd ..;
 cp -f ./src/main.py ./
-pyinstaller -F main.py --key KnALGVu5QwZ6ehyDd;
+pyinstaller -F main.py;
 rm -rf build;
 rm -rf __pycache__;
 rm -f main.spec;

@@ -24,33 +24,32 @@ def draw_rect(centerx, bottomy, width, height, r, g, b):
 
 class GameWindow(pyglet.window.Window):
 
-    def __init__(self, offset, speed, notes, music_start, auto_flag, caption):
+    def __init__(self, offset, speed, song, notes, auto_flag, caption):
         super(GameWindow, self).__init__(vsync=True, width=800, height=600, caption=caption)
         # pyglet.clock.set_fps_limit(60)
+        self.song = song
         self.notes = notes
         self.offset = offset
         self.speed = speed
-        self.music_start = music_start
         self.auto_flag = auto_flag
         self.judge_pos = 100
-        # 底部蓝线的timing
         self.judge_time = self.judge_pos / self.speed
+        # timing of the judge line
         self.lanes = [i for i in range(0, 9)]
         self.lanepos = [i for i in range(100, 750, 75)]
-        # 不能用[0]*9,否则九个元素指向同一片内存地址
         self.cur_note_time = 0
         self.cur_note = []
         self.pos_y = 0
-        self.lanepressed = [0 for i in range(0, 9)]
+        self.lanepressed = [False for i in range(0, 9)]
+        # the lane is pressed or not
         self.time_remain_long = 0
-        # 0表示没有按下，1表示p, 2表示gr
         self.lanepressed_long = [False for i in range(0, 9)]
-        # 长条是否按下(保持)
+        # long note is hold pressed or not
         self.pressing_note_long = [[] for i in range(0, 9)]
-        # 当前处于按下状态的note
+        # the long note being currently pressed
         self.missed_notes = []
         self.dt = 0
-        # note 距离perfect点的距离 in ms
+        # music played time
         self.score = 0
         self.combo = 0
         self.fps_display = pyglet.clock.ClockDisplay()
@@ -74,9 +73,18 @@ class GameWindow(pyglet.window.Window):
         self.combo_label = pyglet.text.Label(text="0 combo", x=400, y=350, anchor_x='center', font_name = 'Acens')
 
         if not self.auto_flag:
-            def auto_play(self, lane):
+            def auto_play(*args):
                 pass
             GameWindow.auto_play = auto_play
+
+        player = pyglet.media.Player()
+        player.queue(self.song)
+        player.play()
+        self.music_start = int(time.time() * 1000)
+        # music start time in ms
+        self.music_duration = int(self.song.duration * 1000)
+
+        pyglet.clock.schedule_interval(self.update, 1 / 200)
 
     def on_draw(self):
         self.clear()
@@ -109,19 +117,19 @@ class GameWindow(pyglet.window.Window):
         for lane in self.lanes:
             for note in self.notes[lane]:
                 if note[0] + note[1] - self.dt - self.offset >= 0:
-                    # note未出下边界
+                    # note is not below window bottom
                     if (note[0] - self.dt - self.offset) * self.speed <= 600:
-                        # note 进入上边界
+                        # note is not above window top
                         self.cur_note_time = note[0] - self.dt - self.offset
                         self.pos_y = self.cur_note_time * self.speed
-                        # 当前note的剩余时间, 高度
+                        # the y position and time to window bottom of the current note
                         self.cur_note = note[:]
-                        # 当前的note,浅复制
+                        # the note currently being checked
                         time_diff = self.cur_note_time - self.judge_time
-                        # 当前note距离judge的时间
+                        # time remaining until judge line
                         self.auto_play(lane)
                         if note[1] == 0:
-                            # 是单键,画出单键
+                            # single note, draw note
                             draw_rect(self.lanepos[lane], self.pos_y, 40.0, 10.0, 1, 1, 1)
                             if self.lanepressed[lane]:
                                 self.judge_score_single(abs(time_diff), lane)
@@ -133,15 +141,14 @@ class GameWindow(pyglet.window.Window):
 
                         else:
 
-                            # 是长条
+                            # long note
                             self.time_remain_long = note[0] + note[1] - self.dt - self.offset - self.judge_time
                             if self.lanepressed[lane] and (not self.lanepressed_long[lane]):
-
-                                # 第一次按下,判断是否在判定区间
+                                # first press, check score
                                 self.judge_score_press(abs(time_diff), lane)
 
                             elif (not self.lanepressed[lane]) and (not self.lanepressed_long[lane]):
-                                # 未按下
+                                # not pressed
                                 draw_rect(self.lanepos[lane], self.pos_y, 40.0, note[1] * self.speed, 1, 1, 1)
 
                                 if time_diff <= - self.b_timing and note not in self.missed_notes:
@@ -152,28 +159,26 @@ class GameWindow(pyglet.window.Window):
 
                             elif self.lanepressed[lane] and self.lanepressed_long[lane] \
                                     and note == self.pressing_note_long[lane]:
-                                # 已经按下过,且本循环的note是上个循环判断的note,且仍未松开
-
+                                # pressing, pressed, the note being checked is the note checked on last frame
                                 if self.time_remain_long >= - self.b_timing:
-                                    # 保证不反向
+                                    # long note will not go upside down
                                     draw_rect(self.lanepos[lane], self.judge_pos,
                                               40.0, self.time_remain_long * self.speed, 1, 1, 0)
                                     draw_rect(self.lanepos[lane], 75, 70.0, 50.0, 1, 0, 0)
                                 else:
-                                    # 松开miss
+                                    # missed release
                                     self.lanepressed_long[lane] = False
                                     self.combo = 0
                                     self.m_label.draw()
 
                             elif (not self.lanepressed[lane]) and self.lanepressed_long[lane] \
                                     and note == self.pressing_note_long[lane]:
-                                # 松开
+                                # release
                                 self.judge_score_release(abs(self.time_remain_long), lane)
                                 self.notes[lane].remove(self.cur_note)
                                 self.lanepressed_long[lane] = False
 
                             else:
-                                # 其他情况？
                                 draw_rect(self.lanepos[lane], self.pos_y, 40.0, note[1] * self.speed, 1, 1, 1)
 
                     else:
@@ -186,6 +191,7 @@ class GameWindow(pyglet.window.Window):
         self.fps_display.draw()
 
     def on_key_press(self, key, modifiers):
+        """set lanepressed to True on key press"""
         if key == pyglet.window.key.A:
             self.lanepressed[0] = True
         elif key == pyglet.window.key.S:
@@ -206,6 +212,7 @@ class GameWindow(pyglet.window.Window):
             self.lanepressed[8] = True
 
     def on_key_release(self, key, modifiers):
+        """set lanepressed to False on key release"""
         if key == pyglet.window.key.A:
             self.lanepressed[0] = False
         elif key == pyglet.window.key.S:
@@ -327,9 +334,8 @@ class GameWindow(pyglet.window.Window):
 
     def update(self, dt):
         self.dt = int(time.time() * 1000) - self.music_start
-        if self.dt > 180000:
+        if self.dt > self.music_duration + 5000:
             self.on_close()
-
 
 
 def play():
@@ -351,26 +357,20 @@ def play():
                 else:
                     print('-----Song does not exist-----\n\n')
         song = libres.load_song(songfiles[songnum])
-        player = pyglet.media.Player()
-        player.queue(song)
         notes = libres.parse_btm(btms[songnum])
 
         print('-----Selected [%s]-----' % (songfiles[songnum].split('.')[0]))
         while True:
             auto_flag = str(input('Auto?(Y/N): '))
-            if auto_flag == 'Y' or auto_flag == 'y' or auto_flag == '\n':
+            if auto_flag == 'Y' or auto_flag == 'y' or auto_flag == '':
                 auto_flag = True
                 break
             elif auto_flag == 'N' or auto_flag == 'n':
                 auto_flag = False
                 break
 
-        player.play()
-        music_start = int(time.time() * 1000)
-        # 音乐开始时间in ms
-        window = GameWindow(offset=libres.offset, speed=libres.speed, notes=notes, music_start=music_start,
-                            auto_flag=auto_flag, caption=songfiles[songnum].split('.')[0])
-        pyglet.clock.schedule_interval(window.update, 1 / 200)
+        GameWindow(offset=libres.offset, speed=libres.speed, song=song, notes=notes,
+                   auto_flag=auto_flag, caption=songfiles[songnum].split('.')[0])
         pyglet.app.run()
 
     except Exception as e:
