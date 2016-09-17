@@ -22,6 +22,7 @@ LONG_COLOR = (1, 1, 1)
 HIT_COLOR = (1, 0, 0)
 KEY_HIT_COLOR = (255, 0, 0, 255)
 LONG_PRESSING_COLOR = (1, 1, 0)
+HIT_EFFECT_FRAMES = 3
 
 
 def draw_rect(centerx, bottomy, width, height, color):
@@ -48,14 +49,14 @@ class GameWindow(pyglet.window.Window):
         self.cur_note_time = 0
         self.cur_note = []
         self.pos_y = 0
-        self.is_lane_pressed = [False for i in range(0, 9)]
+        self.is_lane_pressed = [False for lane in self.lanes]
         # the lane is pressed or not
         self.time_remain_long = 0
-        self.is_lane_pressed_long = [False for i in range(0, 9)]
+        self.is_lane_pressed_long = [False for lane in self.lanes]
         # long note is hold pressed or not
-        self.pressing_note_long = [[] for i in range(0, 9)]
+        self.pressing_note_long = [[] for lane in self.lanes]
         # the long note being currently pressed
-        self.missed_notes = []
+        self.missed_single_notes = []
         self.dt = 0
         # music played time
         self.score = 0
@@ -63,13 +64,14 @@ class GameWindow(pyglet.window.Window):
         self.is_finished = False
         self.note_accuracy = []
         self.fps_display = pyglet.clock.ClockDisplay()
+        self.hit_effect_cached_frames = [[0, 0, 0, 0, 0] for lane in self.lanes]
 
         self.song_summary = 0
         self.background = pyglet.sprite.Sprite(img=libres.background, x=400, y=300)
         self.p_timing = 20
-        self.gr_timing = 40
-        self.g_timing = 60
-        self.b_timing = 100
+        self.gr_timing = 50
+        self.g_timing = 100
+        self.b_timing = 200
         self.p_score = 573
         self.gr_score = 333
         self.g_score = 150
@@ -135,11 +137,12 @@ class GameWindow(pyglet.window.Window):
                             draw_rect(self.lane_pos[lane], self.pos_y, 40.0, 10.0, NOTE_COLOR)
                             if self.is_lane_pressed[lane]:
                                 self.judge_score_single(time_diff, lane)
-                            elif time_diff <= - self.b_timing and note not in self.missed_notes:
+                            elif time_diff <= - self.b_timing and note not in self.missed_single_notes:
                                 # miss
                                 self.combo = 0
                                 self.m_label.draw()
-                                self.missed_notes.append(note)
+                                self.hit_effect_cached_frames[lane][4] += HIT_EFFECT_FRAMES
+                                self.missed_single_notes.append(note)
                                 self.note_accuracy.append(-1000)
 
                         else:
@@ -154,11 +157,12 @@ class GameWindow(pyglet.window.Window):
                                 # not pressed
                                 draw_rect(self.lane_pos[lane], self.pos_y, 40.0, note[1] * self.speed, LONG_COLOR)
 
-                                if time_diff <= - self.b_timing and note not in self.missed_notes:
+                                if time_diff <= - self.b_timing and note not in self.missed_single_notes:
                                     # press miss
                                     self.combo = 0
                                     self.m_label.draw()
-                                    self.missed_notes.append(note)
+                                    self.hit_effect_cached_frames[lane][4] += HIT_EFFECT_FRAMES
+                                    self.missed_single_notes.append(note)
                                     self.note_accuracy.append(-1000)
 
                             elif self.is_lane_pressed[lane] and self.is_lane_pressed_long[lane] \
@@ -176,6 +180,7 @@ class GameWindow(pyglet.window.Window):
                                     self.is_lane_pressed_long[lane] = False
                                     self.combo = 0
                                     self.m_label.draw()
+                                    self.hit_effect_cached_frames[lane][4] += HIT_EFFECT_FRAMES
 
                             elif (not self.is_lane_pressed[lane]) and self.is_lane_pressed_long[lane] \
                                     and note == self.pressing_note_long[lane]:
@@ -192,6 +197,7 @@ class GameWindow(pyglet.window.Window):
         self.score_label.draw()
         if self.combo != 0:
             self.combo_label.draw()
+        self.hit_effect_draw()
         self.fps_display.draw()
 
     def set_combo_color(self):
@@ -262,6 +268,7 @@ class GameWindow(pyglet.window.Window):
         time_diff = abs(_time_diff)
         if time_diff <= self.p_timing:
             self.p_label.draw()
+            self.hit_effect_cached_frames[lane][0] += HIT_EFFECT_FRAMES
             draw_rect(self.lane_pos[lane], 75, 70.0, 50.0, HIT_COLOR)
             self.key_hint_hit[lane].draw()
             self.score += self.p_score
@@ -271,6 +278,7 @@ class GameWindow(pyglet.window.Window):
             self.note_accuracy.append(_time_diff)
         elif time_diff <= self.gr_timing:
             self.gr_label.draw()
+            self.hit_effect_cached_frames[lane][1] += HIT_EFFECT_FRAMES
             draw_rect(self.lane_pos[lane], 75, 70.0, 50.0, HIT_COLOR)
             self.key_hint_hit[lane].draw()
             self.score += self.gr_score
@@ -280,6 +288,7 @@ class GameWindow(pyglet.window.Window):
             self.note_accuracy.append(_time_diff)
         elif time_diff <= self.g_timing:
             self.g_label.draw()
+            self.hit_effect_cached_frames[lane][2] += HIT_EFFECT_FRAMES
             draw_rect(self.lane_pos[lane], 75, 70.0, 50.0, HIT_COLOR)
             self.key_hint_hit[lane].draw()
             self.score += self.g_score
@@ -289,6 +298,7 @@ class GameWindow(pyglet.window.Window):
             self.note_accuracy.append(_time_diff)
         elif time_diff <= self.b_timing:
             self.b_label.draw()
+            self.hit_effect_cached_frames[lane][3] += HIT_EFFECT_FRAMES
             draw_rect(self.lane_pos[lane], 75, 70.0, 50.0, HIT_COLOR)
             self.key_hint_hit[lane].draw()
             self.score += self.b_score
@@ -304,6 +314,7 @@ class GameWindow(pyglet.window.Window):
         time_diff = abs(_time_diff)
         if time_diff <= self.p_timing:
             self.p_label.draw()
+            self.hit_effect_cached_frames[lane][0] += HIT_EFFECT_FRAMES
             draw_rect(self.lane_pos[lane], 75, 70.0, 50.0, HIT_COLOR)
             self.key_hint_hit[lane].draw()
             draw_rect(self.lane_pos[lane], self.judge_pos, 40.0, self.time_remain_long * self.speed, LONG_PRESSING_COLOR)
@@ -314,6 +325,7 @@ class GameWindow(pyglet.window.Window):
             self.note_accuracy.append(_time_diff)
         elif time_diff <= self.gr_timing:
             self.gr_label.draw()
+            self.hit_effect_cached_frames[lane][1] += HIT_EFFECT_FRAMES
             draw_rect(self.lane_pos[lane], 75, 70.0, 50.0, HIT_COLOR)
             self.key_hint_hit[lane].draw()
             draw_rect(self.lane_pos[lane], self.judge_pos, 40.0, self.time_remain_long * self.speed, LONG_PRESSING_COLOR)
@@ -324,6 +336,7 @@ class GameWindow(pyglet.window.Window):
             self.note_accuracy.append(_time_diff)
         elif time_diff <= self.g_timing:
             self.g_label.draw()
+            self.hit_effect_cached_frames[lane][2] += HIT_EFFECT_FRAMES
             draw_rect(self.lane_pos[lane], 75, 70.0, 50.0, HIT_COLOR)
             self.key_hint_hit[lane].draw()
             draw_rect(self.lane_pos[lane], self.judge_pos, 40.0, self.time_remain_long * self.speed, LONG_PRESSING_COLOR)
@@ -335,6 +348,7 @@ class GameWindow(pyglet.window.Window):
             self.note_accuracy.append(_time_diff)
         elif time_diff <= self.b_timing:
             self.b_label.draw()
+            self.hit_effect_cached_frames[lane][3] += HIT_EFFECT_FRAMES
             draw_rect(self.lane_pos[lane], 75, 70.0, 50.0, HIT_COLOR)
             self.key_hint_hit[lane].draw()
             draw_rect(self.lane_pos[lane], self.judge_pos, 40.0, self.time_remain_long * self.speed, LONG_PRESSING_COLOR)
@@ -353,6 +367,7 @@ class GameWindow(pyglet.window.Window):
         time_diff = abs(_time_diff)
         if time_diff <= self.p_timing:
             self.p_label.draw()
+            self.hit_effect_cached_frames[lane][0] += HIT_EFFECT_FRAMES
             draw_rect(self.lane_pos[lane], 75, 70.0, 50.0, HIT_COLOR)
             self.key_hint_hit[lane].draw()
             self.score += self.p_score
@@ -363,6 +378,7 @@ class GameWindow(pyglet.window.Window):
             self.is_lane_pressed_long[lane] = False
         elif time_diff <= self.gr_timing:
             self.gr_label.draw()
+            self.hit_effect_cached_frames[lane][1] += HIT_EFFECT_FRAMES
             draw_rect(self.lane_pos[lane], 75, 70.0, 50.0, HIT_COLOR)
             self.key_hint_hit[lane].draw()
             self.score += self.gr_score
@@ -373,6 +389,7 @@ class GameWindow(pyglet.window.Window):
             self.is_lane_pressed_long[lane] = False
         elif time_diff <= self.g_timing:
             self.g_label.draw()
+            self.hit_effect_cached_frames[lane][2] += HIT_EFFECT_FRAMES
             draw_rect(self.lane_pos[lane], 75, 70.0, 50.0, HIT_COLOR)
             self.key_hint_hit[lane].draw()
             self.score += self.g_score
@@ -381,8 +398,10 @@ class GameWindow(pyglet.window.Window):
             self.note_accuracy.append(_time_diff)
             self.notes[lane].remove(self.cur_note)
             self.is_lane_pressed_long[lane] = False
-        elif time_diff <= self.b_timing:
+        else:
+            # release bad or miss
             self.b_label.draw()
+            self.hit_effect_cached_frames[lane][3] += HIT_EFFECT_FRAMES
             draw_rect(self.lane_pos[lane], 75, 70.0, 50.0, HIT_COLOR)
             self.key_hint_hit[lane].draw()
             self.score += self.b_score
@@ -390,13 +409,16 @@ class GameWindow(pyglet.window.Window):
             self.note_accuracy.append(_time_diff)
             self.notes[lane].remove(self.cur_note)
             self.is_lane_pressed_long[lane] = False
+        '''
         else:
             # miss (release too early)
             draw_rect(self.lane_pos[lane], 75, 70.0, 50.0, HIT_COLOR)
+            self.hit_effect_cached_frames[lane][0] += HIT_EFFECT_FRAMES
             self.combo = 0
             self.notes[lane].remove(self.cur_note)
             self.is_lane_pressed_long[lane] = False
             self.note_accuracy.append(_time_diff)
+        '''
 
     def auto_play(self, lane):
         self.is_lane_pressed = [False for i in range(0, 9)]
@@ -451,6 +473,42 @@ class GameWindow(pyglet.window.Window):
             pass
 
         # self.on_close()
+
+    def hit_score_label_draw(self, hit_type, opacity):
+        if hit_type == 0:
+            self.p_label.opacity = opacity
+            self.p_label.draw()
+            self.p_label.opacity = 255
+        elif hit_type == 1:
+            self.gr_label.opacity = opacity
+            self.gr_label.draw()
+            self.gr_label.opacity = 255
+        elif hit_type == 2:
+            self.g_label.opacity = opacity
+            self.g_label.draw()
+            self.g_label.opacity = 255
+        elif hit_type == 3:
+            self.b_label.opacity = opacity
+            self.b_label.draw()
+            self.b_label.opacity = 255
+        else:
+            self.m_label.opacity = opacity
+            self.m_label.draw()
+            self.m_label.opacity = 255
+
+    def hit_effect_draw(self):
+        for lane in self.lanes:
+            for hit_type in range(0, 4):
+                if self.hit_effect_cached_frames[lane][hit_type] != 0:
+                    draw_rect(self.lane_pos[lane], 75, 70.0, 50.0, HIT_COLOR)
+                    self.key_hint_hit[lane].draw()
+                    opacity = 200 * (self.hit_effect_cached_frames[lane][hit_type]) / HIT_EFFECT_FRAMES
+                    self.hit_score_label_draw(hit_type, opacity)
+                    self.hit_effect_cached_frames[lane][hit_type] -= 1
+            if self.hit_effect_cached_frames[lane][4] != 0:
+                opacity = 200 * (self.hit_effect_cached_frames[lane][4]) / HIT_EFFECT_FRAMES
+                self.hit_score_label_draw(4, opacity)
+                self.hit_effect_cached_frames[lane][4] -= 1
 
 
 def play():
