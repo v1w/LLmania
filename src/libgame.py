@@ -1,7 +1,8 @@
 try:
 
     import time
-    # import traceback
+    import traceback
+    import types
     import pyglet
     from pyglet.gl import *
     import matplotlib.pyplot as plt
@@ -68,9 +69,9 @@ class GameWindow(pyglet.window.Window):
 
         self.song_summary = 0
         self.background = pyglet.sprite.Sprite(img=libres.background, x=400, y=300)
-        self.p_timing = 20
-        self.gr_timing = 50
-        self.g_timing = 100
+        self.p_timing = 40
+        self.gr_timing = 80
+        self.g_timing = 150
         self.b_timing = 200
         self.p_score = 573
         self.gr_score = 333
@@ -84,7 +85,7 @@ class GameWindow(pyglet.window.Window):
         self.score_label = pyglet.text.Label(text="Score: 0", x=400, y=575, anchor_x='center', font_name='Acens')
         self.combo_label = pyglet.text.Label(text="0 combo", x=400, y=350, anchor_x='center', font_name='Acens')
 
-        keys = ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L']
+        keys = ['Q', 'W', 'E', 'R', 'SPACE', 'U', 'I', 'O', 'P']
         self.key_hint = [pyglet.text.Label(text=keys[i], x=self.lane_pos[i], y=50, anchor_x='center',
                                            font_name='Arial', font_size=20) for i in range(0, 9)]
 
@@ -96,7 +97,7 @@ class GameWindow(pyglet.window.Window):
             def auto_play(*args):
                 pass
 
-            GameWindow.auto_play = auto_play
+            self.auto_play = types.MethodType(auto_play, self)
 
         player = pyglet.media.Player()
         player.queue(self.song)
@@ -223,44 +224,44 @@ class GameWindow(pyglet.window.Window):
 
     def on_key_press(self, key, modifiers):
         """set lanepressed to True on key press"""
-        if key == pyglet.window.key.A:
+        if key == pyglet.window.key.Q:
             self.is_lane_pressed[0] = True
-        elif key == pyglet.window.key.S:
+        elif key == pyglet.window.key.W:
             self.is_lane_pressed[1] = True
-        elif key == pyglet.window.key.D:
+        elif key == pyglet.window.key.E:
             self.is_lane_pressed[2] = True
-        elif key == pyglet.window.key.F:
+        elif key == pyglet.window.key.R:
             self.is_lane_pressed[3] = True
-        elif key == pyglet.window.key.G:
+        elif key == pyglet.window.key.SPACE:
             self.is_lane_pressed[4] = True
-        elif key == pyglet.window.key.H:
+        elif key == pyglet.window.key.U:
             self.is_lane_pressed[5] = True
-        elif key == pyglet.window.key.J:
+        elif key == pyglet.window.key.I:
             self.is_lane_pressed[6] = True
-        elif key == pyglet.window.key.K:
+        elif key == pyglet.window.key.O:
             self.is_lane_pressed[7] = True
-        elif key == pyglet.window.key.L:
+        elif key == pyglet.window.key.P:
             self.is_lane_pressed[8] = True
 
     def on_key_release(self, key, modifiers):
         """set lanepressed to False on key release"""
-        if key == pyglet.window.key.A:
+        if key == pyglet.window.key.Q:
             self.is_lane_pressed[0] = False
-        elif key == pyglet.window.key.S:
+        elif key == pyglet.window.key.W:
             self.is_lane_pressed[1] = False
-        elif key == pyglet.window.key.D:
+        elif key == pyglet.window.key.E:
             self.is_lane_pressed[2] = False
-        elif key == pyglet.window.key.F:
+        elif key == pyglet.window.key.R:
             self.is_lane_pressed[3] = False
-        elif key == pyglet.window.key.G:
+        elif key == pyglet.window.key.SPACE:
             self.is_lane_pressed[4] = False
-        elif key == pyglet.window.key.H:
+        elif key == pyglet.window.key.U:
             self.is_lane_pressed[5] = False
-        elif key == pyglet.window.key.J:
+        elif key == pyglet.window.key.I:
             self.is_lane_pressed[6] = False
-        elif key == pyglet.window.key.K:
+        elif key == pyglet.window.key.O:
             self.is_lane_pressed[7] = False
-        elif key == pyglet.window.key.L:
+        elif key == pyglet.window.key.P:
             self.is_lane_pressed[8] = False
 
     def judge_score_single(self, time_diff, lane):
@@ -463,7 +464,7 @@ class GameWindow(pyglet.window.Window):
             self.clear()
             self.song_summary.draw()
 
-        GameWindow.on_draw = _on_finish_draw
+        self.on_draw = types.MethodType(_on_finish_draw, self)
 
     def update(self, dt):
         self.dt = int(time.time() * 1000) - self.music_start
@@ -510,6 +511,12 @@ class GameWindow(pyglet.window.Window):
                 self.hit_score_label_draw(4, opacity)
                 self.hit_effect_cached_frames[lane][4] -= 1
 
+    def on_draw_back(self):
+        pass
+
+    def auto_play_back(self):
+        pass
+
 
 def play():
     try:
@@ -519,36 +526,36 @@ def play():
         for i in range(0, len(song_files)):
             banner += '[' + str(i + 1) + '] ' + song_files[i].split('.')[0] + '\n'
         banner += 'Select Song No.: '
-
         while True:
-            song_num = str(input(banner))
-            if song_num.isdigit():
-                song_num = int(song_num)
-                song_num += -1
-                if song_num in range(0, len(song_files)):
+            while True:
+                song_num = str(input(banner))
+                if song_num.isdigit():
+                    song_num = int(song_num)
+                    song_num += -1
+                    if song_num in range(0, len(song_files)):
+                        break
+                    else:
+                        print('-----Song does not exist-----\n\n')
+            song = libres.load_song(song_files[song_num])
+            notes = libres.parse_btm(btms[song_num])
+
+            print('-----Selected [%s]-----' % (song_files[song_num].split('.')[0]))
+            while True:
+                is_auto = str(input('Auto?(Y/N): '))
+                if is_auto == 'Y' or is_auto == 'y' or is_auto == '':
+                    is_auto = True
                     break
-                else:
-                    print('-----Song does not exist-----\n\n')
-        song = libres.load_song(song_files[song_num])
-        notes = libres.parse_btm(btms[song_num])
+                elif is_auto == 'N' or is_auto == 'n':
+                    is_auto = False
+                    break
+            GameWindow(offset=libres.offset, speed=libres.speed, song=song, notes=notes,
+                       is_auto=is_auto, caption=song_files[song_num].split('.')[0])
 
-        print('-----Selected [%s]-----' % (song_files[song_num].split('.')[0]))
-        while True:
-            is_auto = str(input('Auto?(Y/N): '))
-            if is_auto == 'Y' or is_auto == 'y' or is_auto == '':
-                is_auto = True
-                break
-            elif is_auto == 'N' or is_auto == 'n':
-                is_auto = False
-                break
-
-        GameWindow(offset=libres.offset, speed=libres.speed, song=song, notes=notes,
-                   is_auto=is_auto, caption=song_files[song_num].split('.')[0])
-        pyglet.app.run()
+            pyglet.app.run()
 
     except Exception as e:
         print('Error 20002')
-        # traceback.print_exc()
+        traceback.print_exc()
         raise SystemExit
 
 
