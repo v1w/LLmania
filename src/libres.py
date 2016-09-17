@@ -68,7 +68,7 @@ try:
     offset = 0
     print('======LLSIF emulator======\nAuthor: v1w\nWebsite: github.com/v1w/SIFemu')
     print('==========================')
-    sys.stdout.write('Loading resources..')
+    sys.stdout.write('Scanning resources..')
     os.chdir(os.path.dirname(sys.argv[0]))
     pyglet.resource.path = ['./resources']
     pyglet.resource.reindex()
