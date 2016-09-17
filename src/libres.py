@@ -1,9 +1,9 @@
 try:
 
-    import pyglet
-    import os
     import sys
+    import os
     import json
+    import pyglet
 
 except Exception as e:
     print('Error 20003')
@@ -34,30 +34,32 @@ def load_song(songfile):
 
 
 def scan():
-    """Use parameter songfile to check song and beatmap existence"""
-    songfiles = []
+    """Use parameter song_file to check song and beat map existence"""
+    song_files = []
     btms = []
+    btms_ = []
+    song_files_ = []
     invalid_songs = []
     scan_ = [i for i in os.walk('./resources/')]
-    for parent, dirnames, filenames in scan_:
+    for parent, dir_names, file_names in scan_:
         if parent == './resources/beatmap':
-            btms_ = filenames
+            btms_ = file_names
         if parent == './resources/song':
-            songfiles_ = filenames
+            song_files_ = file_names
 
     for btm in btms_:
         if btm[-4:] == '.btm':
             btms.append(btm)
-    for songfile in songfiles_:
-        if songfile[-4:] in ['.mp3', '.ogg', '.wav']:
-            songfiles.append(songfile)
+    for song_file in song_files_:
+        if song_file[-4:] in ['.mp3', '.ogg', '.wav']:
+            song_files.append(song_file)
 
-    for songfile in songfiles:
-        if (songfile.split('.')[0] + '.btm') not in btms:
-            invalid_songs.append(songfile)
+    for song_file in song_files:
+        if (song_file.split('.')[0] + '.btm') not in btms:
+            invalid_songs.append(song_file)
     for invalid_song in invalid_songs:
-        songfiles.remove(invalid_song)
-    return songfiles, btms
+        song_files.remove(invalid_song)
+    return song_files, btms
 
 
 try:
@@ -66,7 +68,7 @@ try:
     offset = 0
     print('======LLSIF emulator======\nAuthor: v1w\nWebsite: github.com/v1w/SIFemu')
     print('==========================')
-    sys.stdout.write('Loading resources..')
+    sys.stdout.write('Scanning resources..')
     os.chdir(os.path.dirname(sys.argv[0]))
     pyglet.resource.path = ['./resources']
     pyglet.resource.reindex()
