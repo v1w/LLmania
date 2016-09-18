@@ -35,10 +35,8 @@ def draw_rect(centerx, bottomy, width, height, color):
 
 class GameWindow(pyglet.window.Window):
     def __init__(self, offset, speed, song, notes, is_auto, caption):
-        super(GameWindow, self).__init__(vsync=True, caption=caption)
+        super(GameWindow, self).__init__(vsync=True, width=540, height=700, caption=caption)
         # pyglet.clock.set_fps_limit(60)
-        self.width = 540
-        self.height = 800
         self.center = [self.width/2, self.height/2]
         self.song = song
         self.notes = notes
