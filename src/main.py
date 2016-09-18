@@ -8,9 +8,11 @@ try:
     import pyglet
     from pyglet.gl import *
     import matplotlib.pyplot as plt
+    import gamewindow
     import libres
-    import libgame
+    import game
 
-    libgame.play()
+    game.play()
+
 except:
     raise SystemExit
