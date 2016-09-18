@@ -106,11 +106,10 @@ class GameWindow(pyglet.window.Window):
 
             self.auto_play = types.MethodType(auto_play, self)
 
-        player = pyglet.media.Player()
-        player.queue(self.song)
+        self.player = pyglet.media.Player()
+        self.player.queue(self.song)
         self.music_duration = int(self.song.duration * 1000)
-        time.sleep(3)
-        player.play()
+        self.player.play()
         self.music_start = int(time.time() * 1000)
         # music start time in ms
 
@@ -520,6 +519,10 @@ class GameWindow(pyglet.window.Window):
                 opacity = 200 * (self.hit_effect_cached_frames[lane][4]) / HIT_EFFECT_FRAMES
                 self.hit_score_label_draw(4, opacity)
                 self.hit_effect_cached_frames[lane][4] -= 1
+
+    def on_close(self):
+        self.player.delete()
+        super(GameWindow, self).on_close()
     '''
     def score_banners_draw(self):
         for banner in self.score_banners:
@@ -533,14 +536,15 @@ class GameWindow(pyglet.window.Window):
 
 def play():
     try:
-        while True:
-            song_num = ''
-            banner = ''
-            song_files, btms = libres.scan()
-            for i in range(0, len(song_files)):
-                banner += '[' + str(i + 1) + '] ' + song_files[i].split('.')[0] + '\n'
-            banner += 'Select Song No.: '
 
+        song_num = ''
+        banner = ''
+        song_files, btms = libres.scan()
+        for i in range(0, len(song_files)):
+            banner += '[' + str(i + 1) + '] ' + song_files[i].split('.')[0] + '\n'
+        banner += 'Select Song No.: '
+
+        while True:
             while True:
                 song_num = str(input(banner))
                 if song_num.isdigit():
