@@ -4,6 +4,7 @@ try:
     import sys
     import json
     import time
+    import types
     import pyglet
     from pyglet.gl import *
     import matplotlib.pyplot as plt
