@@ -1,13 +1,13 @@
 try:
 
-    # import traceback
+    import traceback
     import pyglet
     import gamewindow
     import libres
 
 except Exception as e:
     print('Error 20004')
-    # traceback.print_exc()
+    traceback.print_exc()
     raise SystemExit
 
 
@@ -53,7 +53,7 @@ def play():
 
     except Exception as e:
         print('Error 20002')
-        # traceback.print_exc()
+        traceback.print_exc()
         raise SystemExit
 
 

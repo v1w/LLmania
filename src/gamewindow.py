@@ -13,7 +13,6 @@ except Exception as e:
 
 
 class GameWindow(pyglet.window.Window):
-
     JUDGE_COLOR = (1, 0, 0)
     NOTE_COLOR = (1, 1, 1)
     LONG_COLOR = (1, 1, 1)
@@ -32,7 +31,7 @@ class GameWindow(pyglet.window.Window):
     def __init__(self, offset, speed, song, notes, is_auto, caption, hit_banners_sounds):
         super(GameWindow, self).__init__(vsync=True, width=540, height=700, caption=caption)
         # pyglet.clock.set_fps_limit(60)
-        self.center = [self.width/2, self.height/2]
+        self.center = [self.width / 2, self.height / 2]
         self.song = song
         self.notes = notes
         self.note_width = 40
@@ -64,40 +63,40 @@ class GameWindow(pyglet.window.Window):
         self.is_finished = False
         self.note_accuracy = []
         self.fps_display = pyglet.clock.ClockDisplay()
-        self.hit_effect_cached_frames = [[0, 0, 0, 0, 0] for lane in self.lanes]
+        self.hit_effect_cached_frames = [{'p': 0, 'gr': 0, 'g': 0, 'b': 0, 'm': 0} for lane in self.lanes]
 
         self.song_summary = 0
         # self.background = pyglet.sprite.Sprite(img=libres.background, x=self.width/2, y=self.height/2)
-        self.p_timing = 40
-        self.gr_timing = 80
-        self.g_timing = 150
-        self.b_timing = 200
-        self.p_score = 573
-        self.gr_score = 333
-        self.g_score = 150
-        self.b_score = 70
-        self.score_label = pyglet.text.Label(text="Score: 0", x=20, y=self.height-30, anchor_x='left', font_name='Acens')
-        self.combo_label = pyglet.text.Label(text="0 combo", x=self.width/2, y=250, anchor_x='center', font_name='Acens')
-        self.p_banner = pyglet.sprite.Sprite(img=hit_banners_sounds['img'][0], x=self.width/2, y=300)
-        self.gr_banner = pyglet.sprite.Sprite(img=hit_banners_sounds['img'][1], x=self.width/2, y=300)
-        self.g_banner = pyglet.sprite.Sprite(img=hit_banners_sounds['img'][2], x=self.width/2, y=300)
-        self.b_banner = pyglet.sprite.Sprite(img=hit_banners_sounds['img'][3], x=self.width/2, y=300)
-        self.m_banner = pyglet.sprite.Sprite(img=hit_banners_sounds['img'][4], x=self.width/2, y=300)
-        self.p_sound = hit_banners_sounds['sound'][0]
-        self.gr_sound = hit_banners_sounds['sound'][1]
-        self.g_sound = hit_banners_sounds['sound'][2]
-        self.score_banners = [self.p_banner, self.gr_banner, self.g_banner, self.b_banner, self.m_banner]
-        for banner in self.score_banners:
-            banner.opacity = 255
+        self.score_label = pyglet.text.Label(text="Score: 0", x=20, y=self.height - 30, anchor_x='left',
+                                             font_name='Acens')
+        self.combo_label = pyglet.text.Label(text="0 combo", x=self.width / 2, y=250, anchor_x='center',
+                                             font_name='Acens')
+
+        self.score_config = {
+            'p': {'timing': 40, 'score': 573, 'banner': None, 'sound': None},
+            'gr': {'timing': 80, 'score': 333, 'banner': None, 'sound': None},
+            'g': {'timing': 150, 'score': 150, 'banner': None, 'sound': None},
+            'b': {'timing': 200, 'score': 70, 'banner': None, 'sound': None},
+            'm': {'timing': None, 'score': None, 'banner': None, 'sound': None}
+        }
+
+        for i in range(0, 5):
+            key = ['p', 'gr', 'g', 'b', 'm'][i]
+            self.score_config[key]['banner'] = \
+                pyglet.sprite.Sprite(img=hit_banners_sounds['img'][i], x=self.width / 2, y=300)
+
+        for i in range(0, 3):
+            key = ['p', 'gr', 'g', 'b', 'm'][i]
+            self.score_config[key]['sound'] = hit_banners_sounds['sound'][i]
 
         keys = ['Q', 'W', 'E', 'R', 'B', 'U', 'I', 'O', 'P']
         self.key_map = ['Q', 'W', 'E', 'R', 'SPACE', 'U', 'I', 'O', 'P']
         self.key_hint = [pyglet.text.Label(text=keys[i], x=self.lane_pos[i], y=50, anchor_x='center',
                                            font_name='Arial', font_size=20) for i in range(0, 9)]
 
-        self.key_hint_hit = [pyglet.text.Label(
-            text=keys[i], x=self.lane_pos[i], y=50, anchor_x='center',
-            font_name='Arial', font_size=20, color=self.KEY_HIT_COLOR) for i in range(0, 9)]
+        self.key_hint_hit = [pyglet.text.Label(text=keys[i], x=self.lane_pos[i], y=50, anchor_x='center',
+                                               font_name='Arial', font_size=20, color=(255, 0, 0, 255)) for i in
+                             range(0, 9)]
 
         if not self.is_auto:
             def auto_play(*args):
@@ -142,13 +141,15 @@ class GameWindow(pyglet.window.Window):
                         self.auto_play(lane)
                         if note[1] == 0:
                             # single note, draw note
-                            self.gl_draw_rect(self.lane_pos[lane], self.pos_y, self.note_width, self.note_height, self.NOTE_COLOR)
+                            self.gl_draw_rect(self.lane_pos[lane], self.pos_y, self.note_width, self.note_height,
+                                              self.NOTE_COLOR)
                             if self.is_lane_pressed[lane]:
                                 self.judge_score_single(time_diff, lane)
-                            elif time_diff <= - self.b_timing and note not in self.missed_single_notes:
+                            elif time_diff <= - self.score_config['b'][
+                                'timing'] and note not in self.missed_single_notes:
                                 # miss
                                 self.combo = 0
-                                self.m_banner.draw()
+                                self.score_config['m']['banner'].draw()
                                 self.hit_effect_cached_frames[lane][4] += self.HIT_EFFECT_FRAMES
                                 self.missed_single_notes.append(note)
                                 self.note_accuracy.append(-1000)
@@ -163,12 +164,14 @@ class GameWindow(pyglet.window.Window):
 
                             elif (not self.is_lane_pressed[lane]) and (not self.is_lane_pressed_long[lane]):
                                 # not pressed
-                                self.gl_draw_rect(self.lane_pos[lane], self.pos_y, self.note_width, note[1] * self.speed, self.LONG_COLOR)
+                                self.gl_draw_rect(self.lane_pos[lane], self.pos_y, self.note_width,
+                                                  note[1] * self.speed, self.LONG_COLOR)
 
-                                if time_diff <= - self.b_timing and note not in self.missed_single_notes:
+                                if time_diff <= - self.score_config['b'][
+                                    'timing'] and note not in self.missed_single_notes:
                                     # press miss
                                     self.combo = 0
-                                    self.m_banner.draw()
+                                    self.score_config['m']['banner'].draw()
                                     self.hit_effect_cached_frames[lane][4] += self.HIT_EFFECT_FRAMES
                                     self.missed_single_notes.append(note)
                                     self.note_accuracy.append(-1000)
@@ -176,18 +179,20 @@ class GameWindow(pyglet.window.Window):
                             elif self.is_lane_pressed[lane] and self.is_lane_pressed_long[lane] \
                                     and note == self.pressing_note_long[lane]:
                                 # pressing, pressed, the note being checked is the note checked on last frame
-                                if self.time_remain_long >= - self.b_timing:
+                                if self.time_remain_long >= - self.score_config['b']['timing']:
                                     # long note will not go upside down
                                     self.gl_draw_rect(self.lane_pos[lane], self.judge_pos,
-                                                      self.note_width, self.time_remain_long * self.speed, self.LONG_PRESSING_COLOR)
-                                    self.gl_draw_rect(self.lane_pos[lane], 75, self.hit_effect_width, 50, self.HIT_COLOR)
+                                                      self.note_width, self.time_remain_long * self.speed,
+                                                      self.LONG_PRESSING_COLOR)
+                                    self.gl_draw_rect(self.lane_pos[lane], 75, self.hit_effect_width, 50,
+                                                      self.HIT_COLOR)
 
                                     self.key_hint_hit[lane].draw()
                                 else:
                                     # missed release (no release all the time)
                                     self.is_lane_pressed_long[lane] = False
                                     self.combo = 0
-                                    self.m_banner.draw()
+                                    self.score_config['m']['banner'].draw()
                                     self.hit_effect_cached_frames[lane][4] += self.HIT_EFFECT_FRAMES
 
                             elif (not self.is_lane_pressed[lane]) and self.is_lane_pressed_long[lane] \
@@ -196,7 +201,8 @@ class GameWindow(pyglet.window.Window):
                                 self.judge_score_release(self.time_remain_long, lane)
 
                             else:
-                                self.gl_draw_rect(self.lane_pos[lane], self.pos_y, self.note_width, note[1] * self.speed, self.LONG_COLOR)
+                                self.gl_draw_rect(self.lane_pos[lane], self.pos_y, self.note_width,
+                                                  note[1] * self.speed, self.LONG_COLOR)
 
                     else:
                         break
@@ -246,145 +252,112 @@ class GameWindow(pyglet.window.Window):
     def judge_score_single(self, time_diff, lane):
         _time_diff = time_diff
         time_diff = abs(_time_diff)
-        if time_diff <= self.p_timing:
-            self.p_banner.draw()
+
+        def judge_score_single_action(hit_type):
+            self.score_config[hit_type]['banner'].draw()
+            self.score_config[hit_type]['sound'].play()
+            self.gl_draw_rect(self.lane_pos[lane], 75, self.hit_effect_width, 50, self.HIT_COLOR)
+            self.key_hint_hit[lane].draw()
+            self.hit_effect_cached_frames[lane][hit_type] += self.HIT_EFFECT_FRAMES
+            self.score += self.score_config[hit_type]['score']
+            self.note_accuracy.append(_time_diff)
+            self.notes[lane].remove(self.cur_note)
+
+        if time_diff <= self.score_config['p']['timing']:
+            judge_score_single_action('p')
+            self.combo += 1
+        elif time_diff <= self.score_config['gr']['timing']:
+            judge_score_single_action('gr')
+            self.combo += 1
+        elif time_diff <= self.score_config['g']['timing']:
+            judge_score_single_action('g')
+            self.combo = 0
+        elif time_diff <= self.score_config['b']['timing']:
+            self.score_config['b']['banner'].draw()
+            self.gl_draw_rect(self.lane_pos[lane], 75, self.hit_effect_width, 50, self.HIT_COLOR)
+            self.key_hint_hit[lane].draw()
             self.hit_effect_cached_frames[lane][0] += self.HIT_EFFECT_FRAMES
-            self.gl_draw_rect(self.lane_pos[lane], 75, self.hit_effect_width, 50, self.HIT_COLOR)
-            self.key_hint_hit[lane].draw()
-            self.score += self.p_score
-            self.combo += 1
-            self.p_sound.play()
-            self.notes[lane].remove(self.cur_note)
+            self.score += self.score_config['b']['score']
             self.note_accuracy.append(_time_diff)
-        elif time_diff <= self.gr_timing:
-            self.gr_banner.draw()
-            self.hit_effect_cached_frames[lane][1] += self.HIT_EFFECT_FRAMES
-            self.gl_draw_rect(self.lane_pos[lane], 75, self.hit_effect_width, 50, self.HIT_COLOR)
-            self.key_hint_hit[lane].draw()
-            self.score += self.gr_score
-            self.combo += 1
-            self.gr_sound.play()
             self.notes[lane].remove(self.cur_note)
-            self.note_accuracy.append(_time_diff)
-        elif time_diff <= self.g_timing:
-            self.g_banner.draw()
-            self.hit_effect_cached_frames[lane][2] += self.HIT_EFFECT_FRAMES
-            self.gl_draw_rect(self.lane_pos[lane], 75, self.hit_effect_width, 50, self.HIT_COLOR)
-            self.key_hint_hit[lane].draw()
-            self.score += self.g_score
             self.combo = 0
-            self.g_sound.play()
-            self.notes[lane].remove(self.cur_note)
-            self.note_accuracy.append(_time_diff)
-        elif time_diff <= self.b_timing:
-            self.b_banner.draw()
-            self.hit_effect_cached_frames[lane][3] += self.HIT_EFFECT_FRAMES
-            self.gl_draw_rect(self.lane_pos[lane], 75, self.hit_effect_width, 50, self.HIT_COLOR)
-            self.key_hint_hit[lane].draw()
-            self.score += self.b_score
-            self.combo = 0
-            self.notes[lane].remove(self.cur_note)
-            self.note_accuracy.append(_time_diff)
-            # self.b_sound.play()
         else:
             pass
 
     def judge_score_press(self, time_diff, lane):
         _time_diff = time_diff
         time_diff = abs(_time_diff)
-        if time_diff <= self.p_timing:
-            self.p_banner.draw()
-            self.hit_effect_cached_frames[lane][0] += self.HIT_EFFECT_FRAMES
+
+        def judge_score_press_action(hit_type):
+            self.score_config[hit_type]['banner'].draw()
+            self.score_config[hit_type]['sound'].play()
             self.gl_draw_rect(self.lane_pos[lane], 75, self.hit_effect_width, 50, self.HIT_COLOR)
             self.key_hint_hit[lane].draw()
-            self.gl_draw_rect(self.lane_pos[lane], self.judge_pos, self.note_width, self.time_remain_long * self.speed, self.LONG_PRESSING_COLOR)
-            self.score += self.p_score
-            self.p_sound.play()
+            self.gl_draw_rect(self.lane_pos[lane], self.judge_pos, self.note_width, self.time_remain_long * self.speed,
+                              self.LONG_PRESSING_COLOR)
+            self.score += self.score_config[hit_type]['score']
             self.is_lane_pressed_long[lane] = True
+            self.hit_effect_cached_frames[lane][hit_type] += self.HIT_EFFECT_FRAMES
             self.pressing_note_long[lane] = self.cur_note[:]
             self.note_accuracy.append(_time_diff)
-        elif time_diff <= self.gr_timing:
-            self.gr_banner.draw()
-            self.hit_effect_cached_frames[lane][1] += self.HIT_EFFECT_FRAMES
-            self.gl_draw_rect(self.lane_pos[lane], 75, self.hit_effect_width, 50, self.HIT_COLOR)
-            self.key_hint_hit[lane].draw()
-            self.gl_draw_rect(self.lane_pos[lane], self.judge_pos, self.note_width, self.time_remain_long * self.speed, self.LONG_PRESSING_COLOR)
-            self.score += self.gr_score
-            self.gr_sound.play()
-            self.is_lane_pressed_long[lane] = True
-            self.pressing_note_long[lane] = self.cur_note[:]
-            self.note_accuracy.append(_time_diff)
-        elif time_diff <= self.g_timing:
-            self.g_banner.draw()
-            self.hit_effect_cached_frames[lane][2] += self.HIT_EFFECT_FRAMES
-            self.gl_draw_rect(self.lane_pos[lane], 75, self.hit_effect_width, 50, self.HIT_COLOR)
-            self.key_hint_hit[lane].draw()
-            self.gl_draw_rect(self.lane_pos[lane], self.judge_pos, self.note_width, self.time_remain_long * self.speed, self.LONG_PRESSING_COLOR)
-            self.score += self.g_score
+
+        if time_diff <= self.score_config['p']['timing']:
+            judge_score_press_action('p')
+        elif time_diff <= self.score_config['gr']['timing']:
+            judge_score_press_action('gr')
+        elif time_diff <= self.score_config['g']['timing']:
+            judge_score_press_action('g')
             self.combo = 0
-            self.g_sound.play()
-            self.is_lane_pressed_long[lane] = True
-            self.pressing_note_long[lane] = self.cur_note[:]
-            self.note_accuracy.append(_time_diff)
-        elif time_diff <= self.b_timing:
-            self.b_banner.draw()
-            self.hit_effect_cached_frames[lane][3] += self.HIT_EFFECT_FRAMES
+        elif time_diff <= self.score_config['b']['timing']:
+            self.score_config['b']['banner'].draw()
+            # self.score_config['b']['sound'].play()
             self.gl_draw_rect(self.lane_pos[lane], 75, self.hit_effect_width, 50, self.HIT_COLOR)
             self.key_hint_hit[lane].draw()
-            self.gl_draw_rect(self.lane_pos[lane], self.judge_pos, self.note_width, self.time_remain_long * self.speed, self.LONG_PRESSING_COLOR)
-            self.score += self.b_score
-            self.combo = 0
+            self.gl_draw_rect(self.lane_pos[lane], self.judge_pos, self.note_width, self.time_remain_long * self.speed,
+                              self.LONG_PRESSING_COLOR)
+            self.score += self.score_config['b']['score']
             self.is_lane_pressed_long[lane] = True
+            self.hit_effect_cached_frames[lane]['b'] += self.HIT_EFFECT_FRAMES
             self.pressing_note_long[lane] = self.cur_note[:]
             self.note_accuracy.append(_time_diff)
-            # self.b_sound.play()
+            self.combo = 0
         else:
-            self.gl_draw_rect(self.lane_pos[lane], self.pos_y, self.note_width, self.cur_note[1] * self.speed, self.LONG_COLOR)
+            # time diff big than bad limit, pass
+            self.gl_draw_rect(self.lane_pos[lane], self.pos_y, self.note_width, self.cur_note[1] * self.speed,
+                              self.LONG_COLOR)
             self.is_lane_pressed_long[lane] = False
 
     def judge_score_release(self, time_diff, lane):
         _time_diff = time_diff
         time_diff = abs(_time_diff)
-        if time_diff <= self.p_timing:
-            self.p_banner.draw()
-            self.hit_effect_cached_frames[lane][0] += self.HIT_EFFECT_FRAMES
+
+        def judge_score_release_action(hit_type):
+            self.score_config[hit_type]['banner'].draw()
+            self.score_config[hit_type]['sound'].play()
             self.gl_draw_rect(self.lane_pos[lane], 75, self.hit_effect_width, 50, self.HIT_COLOR)
             self.key_hint_hit[lane].draw()
-            self.score += self.p_score
-            self.combo += 1
-            self.p_sound.play()
+            self.score += self.score_config[hit_type]['score']
+            self.is_lane_pressed_long[lane] = False
+            self.hit_effect_cached_frames[lane][hit_type] += self.HIT_EFFECT_FRAMES
             self.note_accuracy.append(_time_diff)
             self.notes[lane].remove(self.cur_note)
-            self.is_lane_pressed_long[lane] = False
-        elif time_diff <= self.gr_timing:
-            self.gr_banner.draw()
-            self.hit_effect_cached_frames[lane][1] += self.HIT_EFFECT_FRAMES
-            self.gl_draw_rect(self.lane_pos[lane], 75, self.hit_effect_width, 50, self.HIT_COLOR)
-            self.key_hint_hit[lane].draw()
-            self.score += self.gr_score
+
+        if time_diff <= self.score_config['p']['timing']:
+            judge_score_release_action('p')
             self.combo += 1
-            self.gr_sound.play()
-            self.note_accuracy.append(_time_diff)
-            self.notes[lane].remove(self.cur_note)
-            self.is_lane_pressed_long[lane] = False
-        elif time_diff <= self.g_timing:
-            self.g_banner.draw()
-            self.hit_effect_cached_frames[lane][2] += self.HIT_EFFECT_FRAMES
-            self.gl_draw_rect(self.lane_pos[lane], 75, self.hit_effect_width, 50, self.HIT_COLOR)
-            self.key_hint_hit[lane].draw()
-            self.score += self.g_score
+        elif time_diff <= self.score_config['gr']['timing']:
+            judge_score_release_action('gr')
+            self.combo += 1
+        elif time_diff <= self.score_config['g']['timing']:
+            judge_score_release_action('g')
             self.combo = 0
-            self.g_sound.play()
-            self.note_accuracy.append(_time_diff)
-            self.notes[lane].remove(self.cur_note)
-            self.is_lane_pressed_long[lane] = False
         else:
             # release bad or miss
-            self.b_banner.draw()
-            self.hit_effect_cached_frames[lane][3] += self.HIT_EFFECT_FRAMES
+            self.score_config['b']['banner'].draw()
+            self.hit_effect_cached_frames[lane]['b'] += self.HIT_EFFECT_FRAMES
             self.gl_draw_rect(self.lane_pos[lane], 75, self.hit_effect_width, 50, self.HIT_COLOR)
             self.key_hint_hit[lane].draw()
-            self.score += self.b_score
+            self.score += self.score_config['b']['score']
             self.combo = 0
             self.note_accuracy.append(_time_diff)
             self.notes[lane].remove(self.cur_note)
@@ -405,7 +378,7 @@ class GameWindow(pyglet.window.Window):
         if self.cur_note[1] == 0:
             if self.cur_note_time - self.judge_time <= 10:
                 self.is_lane_pressed[lane] = True
-        elif self.cur_note_time - self.judge_time <= 15 \
+        elif self.cur_note_time - self.judge_time <= 10 \
                 and self.cur_note[1] + self.cur_note[0] - self.dt - self.offset - self.judge_time > 0:
             self.is_lane_pressed[lane] = True
 
@@ -420,12 +393,14 @@ class GameWindow(pyglet.window.Window):
                 _abs_acc += abs(i)
                 _not_missed_note_num += 1
         if _not_missed_note_num != 0:
-            print("\nAverage Absolute Error: %3f ms" % (_abs_acc / _not_missed_note_num))
+            print("Average Absolute Error: %.2f ms\n" % (_abs_acc / _not_missed_note_num))
         font = {'name': 'Arial'}
         font_title = {'name': 'Arial', 'color': 'darkred'}
         plt.scatter(range(1, len(self.note_accuracy) + 1), self.note_accuracy, s=5)
-        plt.plot(range(0, len(self.note_accuracy) + 2), [self.p_timing] * (len(self.note_accuracy) + 2), 'r--')
-        plt.plot(range(0, len(self.note_accuracy) + 2), [-self.p_timing] * (len(self.note_accuracy) + 2), 'r--')
+        plt.plot(range(0, len(self.note_accuracy) + 2),
+                 [self.score_config['p']['timing']] * (len(self.note_accuracy) + 2), 'r--')
+        plt.plot(range(0, len(self.note_accuracy) + 2),
+                 [-self.score_config['p']['timing']] * (len(self.note_accuracy) + 2), 'r--')
         plt.plot(range(0, len(self.note_accuracy) + 2),
                  [(int((_sum_acc / len(self.note_accuracy)) * 10) / 10)] * (len(self.note_accuracy) + 2),
                  'g--', linewidth=2.5)
@@ -434,11 +409,13 @@ class GameWindow(pyglet.window.Window):
         plt.title("Song Summary", **font_title)
         plt.ylabel("Error (ms)", **font)
         plt.xlabel("Note Number", **font)
-        plt.yticks(range(-int(self.b_timing), int(self.b_timing)+int(self.b_timing/5), int(self.b_timing/5)), **font)
+        plt.yticks(range(-int(self.score_config['b']['timing']),
+                         int(self.score_config['b']['timing']) + int(self.score_config['b']['timing'] / 5),
+                         int(self.score_config['b']['timing'] / 5)), **font)
         plt.savefig("Song Summary.png")
         _pic = pyglet.image.load("./Song Summary.png")
-        self.song_summary = pyglet.sprite.Sprite(img=_pic, x=0, y=self.height/2-3 * self.width/8)
-        self.song_summary.scale = self.width/800
+        self.song_summary = pyglet.sprite.Sprite(img=_pic, x=0, y=self.height / 2 - 3 * self.width / 8)
+        self.song_summary.scale = self.width / 800
 
         def _on_finish_draw(self):
             self.clear()
@@ -447,40 +424,23 @@ class GameWindow(pyglet.window.Window):
         self.on_draw = types.MethodType(_on_finish_draw, self)
 
     def hit_score_label_draw(self, hit_type, opacity):
-        if hit_type == 0:
-            self.p_banner.opacity = opacity
-            self.p_banner.draw()
-            self.p_banner.opacity = 255
-        elif hit_type == 1:
-            self.gr_banner.opacity = opacity
-            self.gr_banner.draw()
-            self.gr_banner.opacity = 255
-        elif hit_type == 2:
-            self.g_banner.opacity = opacity
-            self.g_banner.draw()
-            self.g_banner.opacity = 255
-        elif hit_type == 3:
-            self.b_banner.opacity = opacity
-            self.b_banner.draw()
-            self.b_banner.opacity = 255
-        else:
-            self.m_banner.opacity = opacity
-            self.m_banner.draw()
-            self.m_banner.opacity = 255
+        self.score_config[hit_type]['banner'].opacity = opacity
+        self.score_config[hit_type]['banner'].draw()
+        self.score_config[hit_type]['banner'].opacity = 255
 
     def hit_effect_draw(self):
         for lane in self.lanes:
-            for hit_type in range(0, 4):
+            for hit_type in ['p', 'gr', 'g', 'b']:
                 if self.hit_effect_cached_frames[lane][hit_type] != 0:
                     self.gl_draw_rect(self.lane_pos[lane], 75, self.hit_effect_width, 50, self.HIT_COLOR)
                     self.key_hint_hit[lane].draw()
                     opacity = 200 * (self.hit_effect_cached_frames[lane][hit_type]) / self.HIT_EFFECT_FRAMES
-                    self.hit_score_label_draw(hit_type, 255)
+                    self.hit_score_label_draw(hit_type, opacity)
                     self.hit_effect_cached_frames[lane][hit_type] -= 1
-            if self.hit_effect_cached_frames[lane][4] != 0:
+            if self.hit_effect_cached_frames[lane]['m'] != 0:
                 opacity = 200 * (self.hit_effect_cached_frames[lane][4]) / self.HIT_EFFECT_FRAMES
-                self.hit_score_label_draw(4, opacity)
-                self.hit_effect_cached_frames[lane][4] -= 1
+                self.hit_score_label_draw('m', opacity)
+                self.hit_effect_cached_frames[lane]['m'] -= 1
 
     def update(self, dt):
         self.dt = int(time.time() * 1000) - self.music_start
@@ -493,11 +453,13 @@ class GameWindow(pyglet.window.Window):
         self.player.delete()
         super(GameWindow, self).on_close()
         # del self
+
     '''
     def score_banners_draw(self):
-        for banner in self.score_banners:
-            banner.draw()
+        for banner_type in self.score_config:
+            banner = banner_type['banner']
             if banner.opacity > 10:
+                banner.draw()
                 banner.opacity -= banner.opacity/1.5
             else:
                 banner.opacity = 0

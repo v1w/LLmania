@@ -6,7 +6,7 @@ try:
     import time
     import pyglet
     import gamewindow
-    # import traceback
+    import traceback
 
 except Exception as e:
     print('Error 20003')
@@ -69,7 +69,7 @@ def load_song(songfile):
 class RhythmAdjust(gamewindow.GameWindow):
     def __init__(self):
         super(RhythmAdjust, self).__init__(offset=-250, speed=0.4, song=setup_s, notes=setup_n,
-                                          is_auto=False, caption='Speed Adjust', hit_banners_sounds=hit_banners_sounds)
+                                          is_auto=False, caption='Rhythm Adjust', hit_banners_sounds=hit_banners_sounds)
         self.player.eos_action = pyglet.media.Player.EOS_LOOP
         self.speed_up = False
         self.speed_down = False
@@ -107,7 +107,7 @@ class RhythmAdjust(gamewindow.GameWindow):
                     self.gl_draw_rect(self.lane_pos[4], self.pos_y, self.note_width, self.note_height,
                                       self.NOTE_COLOR)
                     if self.cur_note_time - self.judge_time < 10 and note != self.lastnote:
-                        hit_banners_sounds[5].play()
+                        hit_banners_sounds['sound'][0].play()
                         self.lastnote = note[:]
             else:
                 self.notes.pop(0)
@@ -229,8 +229,8 @@ try:
 
 except Exception as e:
     print('Error 20001')
-    print(e)
-    # traceback.print_exc()
+    # print(e)
+    traceback.print_exc()
     raise SystemExit
 
 if __name__ == '__main__':
