@@ -186,7 +186,7 @@ try:
     m_img = pyglet.resource.image("asset/miss.png")
     center_image(m_img)
 
-    hit_banners_sounds = [p_img, gr_img, g_img, b_img, m_img, p_sound, gr_sound, g_sound]
+    hit_banners_sounds = {'img': [p_img, gr_img, g_img, b_img, m_img], 'sound': [p_sound, gr_sound, g_sound]}
 
     try:
 

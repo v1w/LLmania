@@ -78,19 +78,20 @@ class GameWindow(pyglet.window.Window):
         self.b_score = 70
         self.score_label = pyglet.text.Label(text="Score: 0", x=20, y=self.height-30, anchor_x='left', font_name='Acens')
         self.combo_label = pyglet.text.Label(text="0 combo", x=self.width/2, y=250, anchor_x='center', font_name='Acens')
-        self.p_banner = pyglet.sprite.Sprite(img=hit_banners_sounds[0], x=self.width/2, y=300)
-        self.gr_banner = pyglet.sprite.Sprite(img=hit_banners_sounds[1], x=self.width/2, y=300)
-        self.g_banner = pyglet.sprite.Sprite(img=hit_banners_sounds[2], x=self.width/2, y=300)
-        self.b_banner = pyglet.sprite.Sprite(img=hit_banners_sounds[3], x=self.width/2, y=300)
-        self.m_banner = pyglet.sprite.Sprite(img=hit_banners_sounds[4], x=self.width/2, y=300)
-        self.p_sound = hit_banners_sounds[5]
-        self.gr_sound = hit_banners_sounds[6]
-        self.g_sound = hit_banners_sounds[7]
+        self.p_banner = pyglet.sprite.Sprite(img=hit_banners_sounds['img'][0], x=self.width/2, y=300)
+        self.gr_banner = pyglet.sprite.Sprite(img=hit_banners_sounds['img'][1], x=self.width/2, y=300)
+        self.g_banner = pyglet.sprite.Sprite(img=hit_banners_sounds['img'][2], x=self.width/2, y=300)
+        self.b_banner = pyglet.sprite.Sprite(img=hit_banners_sounds['img'][3], x=self.width/2, y=300)
+        self.m_banner = pyglet.sprite.Sprite(img=hit_banners_sounds['img'][4], x=self.width/2, y=300)
+        self.p_sound = hit_banners_sounds['sound'][0]
+        self.gr_sound = hit_banners_sounds['sound'][1]
+        self.g_sound = hit_banners_sounds['sound'][2]
         self.score_banners = [self.p_banner, self.gr_banner, self.g_banner, self.b_banner, self.m_banner]
         for banner in self.score_banners:
             banner.opacity = 255
 
         keys = ['Q', 'W', 'E', 'R', 'B', 'U', 'I', 'O', 'P']
+        self.key_map = ['Q', 'W', 'E', 'R', 'SPACE', 'U', 'I', 'O', 'P']
         self.key_hint = [pyglet.text.Label(text=keys[i], x=self.lane_pos[i], y=50, anchor_x='center',
                                            font_name='Arial', font_size=20) for i in range(0, 9)]
 
@@ -230,45 +231,17 @@ class GameWindow(pyglet.window.Window):
 
     def on_key_press(self, key, modifiers):
         """set lanepressed to True on key press"""
-        if key == pyglet.window.key.Q:
-            self.is_lane_pressed[0] = True
-        elif key == pyglet.window.key.W:
-            self.is_lane_pressed[1] = True
-        elif key == pyglet.window.key.E:
-            self.is_lane_pressed[2] = True
-        elif key == pyglet.window.key.R:
-            self.is_lane_pressed[3] = True
-        elif key == pyglet.window.key.SPACE:
-            self.is_lane_pressed[4] = True
-        elif key == pyglet.window.key.U:
-            self.is_lane_pressed[5] = True
-        elif key == pyglet.window.key.I:
-            self.is_lane_pressed[6] = True
-        elif key == pyglet.window.key.O:
-            self.is_lane_pressed[7] = True
-        elif key == pyglet.window.key.P:
-            self.is_lane_pressed[8] = True
+        for lane in self.lanes:
+            if key == getattr(pyglet.window.key, self.key_map[lane]):
+                self.is_lane_pressed[lane] = True
+                break
 
     def on_key_release(self, key, modifiers):
         """set lanepressed to False on key release"""
-        if key == pyglet.window.key.Q:
-            self.is_lane_pressed[0] = False
-        elif key == pyglet.window.key.W:
-            self.is_lane_pressed[1] = False
-        elif key == pyglet.window.key.E:
-            self.is_lane_pressed[2] = False
-        elif key == pyglet.window.key.R:
-            self.is_lane_pressed[3] = False
-        elif key == pyglet.window.key.SPACE:
-            self.is_lane_pressed[4] = False
-        elif key == pyglet.window.key.U:
-            self.is_lane_pressed[5] = False
-        elif key == pyglet.window.key.I:
-            self.is_lane_pressed[6] = False
-        elif key == pyglet.window.key.O:
-            self.is_lane_pressed[7] = False
-        elif key == pyglet.window.key.P:
-            self.is_lane_pressed[8] = False
+        for lane in self.lanes:
+            if key == getattr(pyglet.window.key, self.key_map[lane]):
+                self.is_lane_pressed[lane] = False
+                break
 
     def judge_score_single(self, time_diff, lane):
         _time_diff = time_diff
