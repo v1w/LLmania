@@ -7,7 +7,7 @@ try:
 
 except Exception as e:
     print('Error 20004')
-    traceback.print_exc()
+    # traceback.print_exc()
     raise SystemExit
 
 

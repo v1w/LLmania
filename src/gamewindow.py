@@ -20,6 +20,7 @@ class GameWindow(pyglet.window.Window):
     KEY_HIT_COLOR = (255, 0, 0, 255)
     LONG_PRESSING_COLOR = (1, 1, 0)
     HIT_EFFECT_FRAMES = 3
+    LANE_NUM = 9
 
     @staticmethod
     def gl_draw_rect(centerx, bottomy, width, height, color):
@@ -43,7 +44,7 @@ class GameWindow(pyglet.window.Window):
         self.judge_pos = 100
         self.judge_time = self.judge_pos / self.speed
         # timing of the judge line
-        self.lanes = [lane for lane in range(0, 9)]
+        self.lanes = [lane for lane in range(0, self.LANE_NUM)]
         self.lane_pos = [lane for lane in range(30, 900, 60)]
         self.cur_note_time = 0
         self.cur_note = []
@@ -56,6 +57,8 @@ class GameWindow(pyglet.window.Window):
         self.pressing_note_long = [[] for lane in self.lanes]
         # the long note being currently pressed
         self.missed_single_notes = []
+        self.press_count = [0 for lane in range(0, self.LANE_NUM)]
+        self.last_press_count = [0 for lane in range(0, self.LANE_NUM)]
         self.dt = 0
         # music played time
         self.score = 0
@@ -143,14 +146,15 @@ class GameWindow(pyglet.window.Window):
                             # single note, draw note
                             self.gl_draw_rect(self.lane_pos[lane], self.pos_y, self.note_width, self.note_height,
                                               self.NOTE_COLOR)
-                            if self.is_lane_pressed[lane]:
+                            if self.is_lane_pressed[lane] and self.press_count[lane] != self.last_press_count[lane]:
+                                self.last_press_count[lane] = self.press_count[lane]
                                 self.judge_score_single(time_diff, lane)
-                            elif time_diff <= - self.score_config['b'][
-                                'timing'] and note not in self.missed_single_notes:
+                            elif time_diff <= - self.score_config['b']['timing']\
+                                    and note not in self.missed_single_notes:
                                 # miss
                                 self.combo = 0
                                 self.score_config['m']['banner'].draw()
-                                self.hit_effect_cached_frames[lane][4] += self.HIT_EFFECT_FRAMES
+                                self.hit_effect_cached_frames[lane]['m'] += self.HIT_EFFECT_FRAMES
                                 self.missed_single_notes.append(note)
                                 self.note_accuracy.append(-1000)
 
@@ -158,21 +162,24 @@ class GameWindow(pyglet.window.Window):
 
                             # long note
                             self.time_remain_long = note[0] + note[1] - self.dt - self.offset - self.judge_time
-                            if self.is_lane_pressed[lane] and (not self.is_lane_pressed_long[lane]):
+                            if self.is_lane_pressed[lane] and (not self.is_lane_pressed_long[lane])\
+                                    and self.press_count[lane] != self.last_press_count[lane]:
+                                self.last_press_count[lane] = self.press_count[lane]
                                 # first press, check score
                                 self.judge_score_press(time_diff, lane)
 
-                            elif (not self.is_lane_pressed[lane]) and (not self.is_lane_pressed_long[lane]):
+                            elif (not self.is_lane_pressed[lane]) and (not self.is_lane_pressed_long[lane])\
+                                    or self.press_count[lane] == self.last_press_count[lane]:
                                 # not pressed
                                 self.gl_draw_rect(self.lane_pos[lane], self.pos_y, self.note_width,
                                                   note[1] * self.speed, self.LONG_COLOR)
 
-                                if time_diff <= - self.score_config['b'][
-                                    'timing'] and note not in self.missed_single_notes:
+                                if time_diff <= - self.score_config['b']['timing'] \
+                                        and note not in self.missed_single_notes:
                                     # press miss
                                     self.combo = 0
                                     self.score_config['m']['banner'].draw()
-                                    self.hit_effect_cached_frames[lane][4] += self.HIT_EFFECT_FRAMES
+                                    self.hit_effect_cached_frames[lane]['m'] += self.HIT_EFFECT_FRAMES
                                     self.missed_single_notes.append(note)
                                     self.note_accuracy.append(-1000)
 
@@ -193,7 +200,7 @@ class GameWindow(pyglet.window.Window):
                                     self.is_lane_pressed_long[lane] = False
                                     self.combo = 0
                                     self.score_config['m']['banner'].draw()
-                                    self.hit_effect_cached_frames[lane][4] += self.HIT_EFFECT_FRAMES
+                                    self.hit_effect_cached_frames[lane]['m'] += self.HIT_EFFECT_FRAMES
 
                             elif (not self.is_lane_pressed[lane]) and self.is_lane_pressed_long[lane] \
                                     and note == self.pressing_note_long[lane]:
@@ -236,10 +243,11 @@ class GameWindow(pyglet.window.Window):
             self.combo_label.font_size = 12
 
     def on_key_press(self, key, modifiers):
-        """set lanepressed to True on key press"""
+        """set lanepressed to True on key press only activate once per press"""
         for lane in self.lanes:
             if key == getattr(pyglet.window.key, self.key_map[lane]):
                 self.is_lane_pressed[lane] = True
+                self.press_count[lane] += 1
                 break
 
     def on_key_release(self, key, modifiers):
@@ -276,7 +284,7 @@ class GameWindow(pyglet.window.Window):
             self.score_config['b']['banner'].draw()
             self.gl_draw_rect(self.lane_pos[lane], 75, self.hit_effect_width, 50, self.HIT_COLOR)
             self.key_hint_hit[lane].draw()
-            self.hit_effect_cached_frames[lane][0] += self.HIT_EFFECT_FRAMES
+            self.hit_effect_cached_frames[lane]['b'] += self.HIT_EFFECT_FRAMES
             self.score += self.score_config['b']['score']
             self.note_accuracy.append(_time_diff)
             self.notes[lane].remove(self.cur_note)
@@ -378,9 +386,11 @@ class GameWindow(pyglet.window.Window):
         if self.cur_note[1] == 0:
             if self.cur_note_time - self.judge_time <= 10:
                 self.is_lane_pressed[lane] = True
+                self.press_count[lane] += 1
         elif self.cur_note_time - self.judge_time <= 10 \
                 and self.cur_note[1] + self.cur_note[0] - self.dt - self.offset - self.judge_time > 0:
             self.is_lane_pressed[lane] = True
+            self.press_count[lane] += 1
 
     def on_song_finish(self):
         self.is_finished = True
@@ -438,7 +448,7 @@ class GameWindow(pyglet.window.Window):
                     self.hit_score_label_draw(hit_type, opacity)
                     self.hit_effect_cached_frames[lane][hit_type] -= 1
             if self.hit_effect_cached_frames[lane]['m'] != 0:
-                opacity = 200 * (self.hit_effect_cached_frames[lane][4]) / self.HIT_EFFECT_FRAMES
+                opacity = 200 * (self.hit_effect_cached_frames[lane]['m']) / self.HIT_EFFECT_FRAMES
                 self.hit_score_label_draw('m', opacity)
                 self.hit_effect_cached_frames[lane]['m'] -= 1
 
