@@ -164,12 +164,11 @@ class GameWindow(pyglet.window.Window):
                             self.time_remain_long = note[0] + note[1] - self.dt - self.offset - self.judge_time
                             if self.is_lane_pressed[lane] and (not self.is_lane_pressed_long[lane])\
                                     and self.press_count[lane] != self.last_press_count[lane]:
+                                # first press (need to be single press), check score
                                 self.last_press_count[lane] = self.press_count[lane]
-                                # first press, check score
                                 self.judge_score_press(time_diff, lane)
 
-                            elif (not self.is_lane_pressed[lane]) and (not self.is_lane_pressed_long[lane])\
-                                    or self.press_count[lane] == self.last_press_count[lane]:
+                            elif (not self.is_lane_pressed[lane]) and (not self.is_lane_pressed_long[lane]):
                                 # not pressed
                                 self.gl_draw_rect(self.lane_pos[lane], self.pos_y, self.note_width,
                                                   note[1] * self.speed, self.LONG_COLOR)
