@@ -1,6 +1,6 @@
 try:
 
-    import traceback
+    # import traceback
     import pyglet
     import gamewindow
     import libres
@@ -53,7 +53,7 @@ def play():
 
     except Exception as e:
         print('Error 20002')
-        traceback.print_exc()
+        # traceback.print_exc()
         raise SystemExit
 
 

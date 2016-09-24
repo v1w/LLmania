@@ -76,7 +76,7 @@ class GameWindow(pyglet.window.Window):
                                              font_name='Acens')
 
         self.score_config = {
-            'p': {'timing': 40, 'score': 573, 'banner': None, 'sound': None},
+            'p': {'timing': 45, 'score': 573, 'banner': None, 'sound': None},
             'gr': {'timing': 80, 'score': 333, 'banner': None, 'sound': None},
             'g': {'timing': 150, 'score': 150, 'banner': None, 'sound': None},
             'b': {'timing': 200, 'score': 70, 'banner': None, 'sound': None},

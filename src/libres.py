@@ -164,7 +164,7 @@ try:
     pyglet.font.add_file('./resources/asset/Acens.ttf')
     font = pyglet.font.load('Acens')
 
-    p_sound = pyglet.resource.media("asset/soft-hitclap.mp3", streaming=False)
+    p_sound = pyglet.resource.media("asset/perfect.mp3", streaming=False)
     gr_sound = pyglet.resource.media("asset/great.mp3", streaming=False)
     g_sound = pyglet.resource.media("asset/good.mp3", streaming=False)
     setup_s = pyglet.resource.media("asset/setup.wav", streaming=False)
