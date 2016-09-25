@@ -7,7 +7,7 @@ This project is just for fun. All song and beat map copyrights belong to the ori
 ![](https://raw.githubusercontent.com/v1w/ImageCache/master/SIFemu/play.png)
 ![](https://raw.githubusercontent.com/v1w/ImageCache/master/SIFemu/songsummary.png)
 ##Downloads
-[v0.2.0-win](https://github.com/v1w/SIFemu/releases/download/v0.2.0/SIFemu-0.2.0-win32.tar.gz)  (Old)
+[v0.3.0-win](https://github.com/v1w/SIFemu/releases/download/v0.3.0/LLmania-0.3.0-win32.zip)  
 
 ##Running from source
 ###Requirements
