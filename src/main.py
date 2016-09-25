@@ -10,6 +10,7 @@ try:
     import requests
     from pyglet.gl import *
     import matplotlib.pyplot as plt
+    from mutagen.mp3 import MP3
     import gamewindow
     import libres
     import game
