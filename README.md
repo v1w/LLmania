@@ -13,7 +13,7 @@ This project is just for fun. All song and beat map copyrights belong to the ori
 ###Requirements
 1. Python3 
 2. [AVbin 10](http://avbin.github.io/AVbin/Download.html)  
-3. `pip-python3 install pyglet matplotlib requests`
+3. `pip-python3 install pyglet matplotlib requests mutagen`
 
 ###Run
 `cd src && python ./main.py`
