@@ -1,6 +1,6 @@
 # SIFemu
 A rhythm game written in Python3.  
-Can actively scan for new songs and beat maps from [LLpractice](https://m.tianyi9.com/).
+Can actively scan for new songs and beat maps from [LLpractice](https://m.tianyi9.com/).  
 This project is just for fun. All song and beat map copyrights belong to the original authors. 
 ##Screenshot
 ![](https://raw.githubusercontent.com/v1w/ImageCache/master/SIFemu/help.png)

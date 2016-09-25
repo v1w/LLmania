@@ -1,3 +1,5 @@
+make.sh
+launcher
 /src/resources/song/*.mp3
 /src/resources/beatmap/*.btm
 song_list.txt
