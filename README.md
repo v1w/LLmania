@@ -1,4 +1,4 @@
-# SIFemu
+# LLmania
 A rhythm game written in Python3.  
 Can actively scan for new songs and beat maps from [LLpractice](https://m.tianyi9.com/).  
 This project is just for fun. All song and beat map copyrights belong to the original authors. 
