@@ -149,7 +149,7 @@ class GameWindow(pyglet.window.Window):
                             if self.is_lane_pressed[lane] and self.press_count[lane] != self.last_press_count[lane]:
                                 self.last_press_count[lane] = self.press_count[lane]
                                 self.judge_score_single(time_diff, lane)
-                            elif time_diff <= - self.score_config['b']['timing']\
+                            elif time_diff <= max(- self.score_config['b']['timing'], - self.judge_time+20) \
                                     and note not in self.missed_single_notes:
                                 # miss
                                 self.combo = 0

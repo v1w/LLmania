@@ -3,7 +3,7 @@ import json
 from mutagen.mp3 import MP3
 import os
 import sys
-
+import traceback
 
 def update_song_list():
     def sort_list(arg):
@@ -43,5 +43,6 @@ def download_song(*live_id):
             # remove ID3
             json.dump(btm, open('./resources/beatmap/' + name + '.btm', 'w'))
             print('OK')
-        except json.decoder.JSONDecodeError:
+        except:
             print('Download Error for live ID %s' % live)
+            traceback.print_exc()
