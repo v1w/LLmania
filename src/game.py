@@ -7,6 +7,7 @@ try:
     import libres
     import llpractice
     import sys
+    import os
 
 except Exception as e:
     print('Error 20004')
@@ -106,6 +107,10 @@ class GameConsole(cmd.Cmd):
 
 
 def init():
+    if not os.path.exists('./resources/song'):
+        os.makedirs('./resources/song')
+    if not os.path.exists('./resources/beatmap'):
+        os.makedirs('./resources/beatmap')
     hint = """Available commands:
         [play]: Play available songs
         [updatesonglist]: Get available songs from LLPractice

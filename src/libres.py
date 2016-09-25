@@ -22,6 +22,7 @@ def center_image(image):
 
 def scan():
     """Use parameter song_file to check song and beat map existence"""
+    pyglet.resource.reindex()
     song_files = []
     btms = []
     btms_ = []

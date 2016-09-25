@@ -3,7 +3,8 @@ import json
 from mutagen.mp3 import MP3
 import os
 import sys
-import traceback
+#import traceback
+
 
 def update_song_list():
     def sort_list(arg):
@@ -45,4 +46,4 @@ def download_song(*live_id):
             print('OK')
         except:
             print('Download Error for live ID %s' % live)
-            traceback.print_exc()
+            #traceback.print_exc()
