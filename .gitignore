@@ -1,5 +1,5 @@
-/resources/song/*.mp3
-/resources/beatmap/*.btm
+/src/resources/song/*.mp3
+/src/resources/beatmap/*.btm
 song_list.txt
 songlist
 Song Summary.png

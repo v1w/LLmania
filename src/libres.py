@@ -40,9 +40,8 @@ def scan():
     for song_file in song_files_:
         if song_file[-4:] in ['.mp3', '.ogg', '.wav']:
             song_files.append(song_file)
-
     for song_file in song_files:
-        if (song_file.split('.')[0] + '.btm') not in btms:
+        if (song_file[:-4] + '.btm') not in btms:
             invalid_songs.append(song_file)
     for invalid_song in invalid_songs:
         song_files.remove(invalid_song)
