@@ -155,8 +155,8 @@ try:
 
     speed = 0
     offset = 0
-    print('======LLSIF emulator======\nAuthor: v1w\nWebsite: github.com/v1w/SIFemu')
-    print('==========================')
+    print('======LoveLive! Mania======\nAuthor: v1w\nWebsite: github.com/v1w/LLmania')
+    print('===========================')
     #sys.stdout.write('Loading asset..\n')
     os.chdir(os.path.dirname(sys.argv[0]))
     pyglet.resource.path = ['./resources']

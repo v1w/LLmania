@@ -54,7 +54,7 @@ def play(*args):
 
 class GameConsole(cmd.Cmd):
     intro = None
-    prompt = 'SIFemu>> '
+    prompt = 'LLmania>> '
 
     def cmdloop_keyboardinterrupt(self):
         print('\rType quit to exit.')
@@ -74,9 +74,7 @@ class GameConsole(cmd.Cmd):
         """Play available songs.
         Usage:
         play [song number] <a>
-        example:
-        play 1 a
-        play 10"""
+        example: 'play 1 a' will play song No.1 in auto mode"""
         is_auto = False
         song_num = None
         if len(args) == 0:
