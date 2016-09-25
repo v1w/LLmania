@@ -6,7 +6,7 @@ try:
     import time
     import pyglet
     import gamewindow
-    import traceback
+    # import traceback
 
 except Exception as e:
     print('Error 20003')
@@ -157,7 +157,7 @@ try:
     offset = 0
     print('======LLSIF emulator======\nAuthor: v1w\nWebsite: github.com/v1w/SIFemu')
     print('==========================')
-    sys.stdout.write('Scanning resources..\n')
+    #sys.stdout.write('Loading asset..\n')
     os.chdir(os.path.dirname(sys.argv[0]))
     pyglet.resource.path = ['./resources']
     pyglet.resource.reindex()
@@ -230,7 +230,7 @@ try:
 except Exception as e:
     print('Error 20001')
     # print(e)
-    traceback.print_exc()
+    # traceback.print_exc()
     raise SystemExit
 
 if __name__ == '__main__':
